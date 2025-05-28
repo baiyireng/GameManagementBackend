@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import './style.css';
+import './styles/main.scss'; // 修改此处
 import App from './App.vue';
 import router from './router'; // 新增：导入路由实例
 

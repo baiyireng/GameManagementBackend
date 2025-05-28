@@ -1,22 +1,10 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
-    <div>
-        <!-- 导航链接 -->
-        <nav>
-            <router-link to="/">首页</router-link> |
-            <router-link to="/about">关于</router-link>
-        </nav>
-
-        <!-- 路由视图（关键） -->
-        <router-view />
-    </div>
+    <!-- 仅保留路由视图，主导航由 MainLayout 处理 -->
+    <router-view />
 </template>
 
 <style scoped>
-nav {
-    padding: 1rem;
-    font-size: 1.2em;
-}
+/* 移除原 nav 样式，避免与主布局冲突 */
 </style>

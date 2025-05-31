@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ElForm } from 'element-plus';
+// 尝试使用相对路径导入，假设 utils 目录与当前文件的相对位置是 ../utils
+import request from '../utils/request'; // 导入封装的axios
 
 interface LoginForm {
     username: string;
@@ -13,19 +15,29 @@ const formRef = ref<InstanceType<typeof ElForm>>();
 const rules = ref({
     username: [
         { required: true, message: '请输入用户名', trigger: 'blur' },
-        { min: 3, max: 20, message: '用户名长度3-20位', trigger: 'blur' }
+        { min: 3, max: 20, message: '用户名长度3-20位', trigger: 'blur' },
     ],
     password: [
         { required: true, message: '请输入密码', trigger: 'blur' },
-        { min: 6, max: 20, message: '密码长度6-20位', trigger: 'blur' }
-    ]
+        { min: 6, max: 20, message: '密码长度6-20位', trigger: 'blur' },
+    ],
 });
 
-const handleLogin = () => {
-    formRef.value?.validate((valid) => {
+const handleLogin = async () => {
+    formRef.value?.validate(async (valid) => {
         if (valid) {
-            localStorage.setItem('mock-token', '123456');
-            window.location.href = '/';
+            try {
+                // 调用登录接口（假设后端接口为POST /api/login）
+                const token = await request.post('/api/login', {
+                    username: form.value.username,
+                    password: form.value.password,
+                });
+                // 由于 token 是 AxiosResponse 类型，需要提取其中的数据部分，通常响应数据在 data 属性中
+                localStorage.setItem('mock-token', token.data);
+                window.location.href = '/';
+            } catch (error) {
+                console.error('登录失败:', error);
+            }
         }
     });
 };
@@ -44,17 +56,24 @@ const handleLogin = () => {
         <el-col :span="12" class="login-form">
             <el-card class="login-card" shadow="never">
                 <h2 class="title">管理员登录</h2>
-                <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+                <el-form ref="formRef" :model="form" :rules="rules" label-width="auto">
                     <el-form-item label="用户名" prop="username">
-                        <el-input v-model="form.username" placeholder="请输入用户名" style="height: 40px; font-size: 14px" />
+                        <el-input
+                            v-model="form.username"
+                            placeholder="请输入用户名"
+                            style="height: 40px; font-size: 14px"
+                        />
                     </el-form-item>
                     <el-form-item label="密码" prop="password">
-                        <el-input v-model="form.password" type="password" placeholder="请输入密码"
-                            style="height: 40px; font-size: 14px" />
+                        <el-input
+                            v-model="form.password"
+                            type="password"
+                            placeholder="请输入密码"
+                            style="height: 40px; font-size: 14px"
+                        />
                     </el-form-item>
-                    <el-form-item>
-                        <el-button type="primary" style="width: 100%; height: 40px; font-size: 16px"
-                            @click="handleLogin">
+                    <el-form-item class="login-button-wrapper">
+                        <el-button class="login-button" type="primary" @click="handleLogin">
                             立即登录
                         </el-button>
                     </el-form-item>
@@ -76,7 +95,7 @@ const handleLogin = () => {
     position: relative;
 
     &::before {
-        content: "!";
+        content: '!';
         position: absolute;
         left: -20px;
         top: 50%;
@@ -166,7 +185,10 @@ const handleLogin = () => {
         padding-bottom: 8px;
     }
 }
-
+.login-button-wrapper .el-form-item__content {
+    margin: auto;
+    background-color: red;
+}
 .el-input__wrapper {
     border-radius: 8px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

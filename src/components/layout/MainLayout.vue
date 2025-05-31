@@ -22,8 +22,14 @@ const handleLogout = () => {
         <el-container>
             <!-- 侧边菜单 -->
             <el-aside width="200px" class="sidebar">
-                <el-menu default-active="/games" router background-color="#f8f9fa" text-color="#303133"
-                    active-text-color="#409eff">
+                <el-menu
+                    default-active="/games"
+                    router
+                    background-color="#f8f9fa"
+                    text-color="#303133"
+                    active-text-color="#409eff"
+                    :collapse-transition="false"
+                >
                     <el-menu-item index="/games">游戏管理</el-menu-item>
                     <el-menu-item index="/users">用户管理</el-menu-item>
                     <el-menu-item index="/settings">系统设置</el-menu-item>
@@ -41,16 +47,26 @@ const handleLogout = () => {
 <style lang="less" scoped>
 .main-layout {
     height: 100vh;
-    overflow: hidden; // 新增：防止滚动条问题
+    overflow: hidden;
 
     .header {
-        height: 60px !important; // 固定高度
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); // 新增：添加投影
+        height: 60px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); /* 更符合游戏主题的渐变 */
     }
 
     .sidebar {
-        height: calc(100vh - 60px); // 动态高度计算
-        overflow-y: auto; // 新增：支持菜单滚动
+        height: calc(100vh - 60px);
+        overflow-y: auto;
+        border-right: 1px solid #e6e9ed;
+
+        /* 菜单悬停效果 */
+        .el-menu-item {
+            transition: all 0.3s;
+            &:hover {
+                background-color: #e6f4ff;
+            }
+        }
     }
 }
 
@@ -58,18 +74,14 @@ const handleLogout = () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #409eff;
     color: white;
     padding: 0 30px;
     font-size: 18px;
 }
 
-.sidebar {
-    border-right: 1px solid #ebeef5;
-}
-
 .content {
-    padding: 20px;
-    background: #fff;
+    padding: 24px;
+    background: #f8f9fa; /* 内容区浅背景 */
+    overflow-y: auto; /* 支持内容滚动 */
 }
 </style>

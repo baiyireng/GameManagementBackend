@@ -1,15 +1,15 @@
 #app {
-  padding: 0;
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  
-  // 全局覆盖 element-plus 样式示例
-  .el-button {
-    letter-spacing: 0.5px;
-  }
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+
+    // 全局覆盖 element-plus 样式示例
+    .el-button {
+        letter-spacing: 0.5px;
+    }
 }
 body {
-  margin: 0;
-  padding: 0;
+    margin: 0;
+    padding: 0;
 }

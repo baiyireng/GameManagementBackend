@@ -1,16 +1,26 @@
-[
-    {
-        "id": 1,
-        "name": "魔法冒险",
-        "status": "已发布",
-        "updateTime": "2024-03-10 14:30",
-        "description": "一款奇幻风格的角色扮演游戏"
-    },
-    {
-        "id": 2,
-        "name": "太空射击",
-        "status": "开发中",
-        "updateTime": "2024-03-11 09:15",
-        "description": "科幻题材的太空射击游戏"
-    }
-]
+{
+    "code": 200,
+    "data": [
+        {
+            "id": 1,
+            "name": "魔法冒险",
+            "type": "角色扮演",
+            "platform": "PC/移动端",
+            "status": "已发布",
+            "cover": "/images/cover1.jpg",
+            "updateTime": "2024-03-10 14:30",
+            "releaseTime": "2024-01-01 09:00"
+        },
+        {
+            "id": 2,
+            "name": "太空射击",
+            "type": "角色扮演",
+            "platform": "PC/移动端",
+            "status": "已发布",
+            "cover": "/images/cover1.jpg",
+            "updateTime": "2024-03-10 14:30",
+            "releaseTime": "2024-01-01 09:00"
+        }
+    ],
+    "message": "登录成功"
+}

@@ -15,7 +15,7 @@ const handleLogout = () => {
         <!-- 顶部导航 -->
         <el-header class="header">
             <div class="logo">游戏管理后台</div>
-            <el-button type="text" @click="handleLogout">退出登录</el-button>
+            <el-button type="primary" @click="handleLogout">退出登录</el-button>
         </el-header>
 
         <!-- 主体内容 -->

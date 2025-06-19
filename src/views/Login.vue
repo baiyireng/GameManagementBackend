@@ -34,7 +34,7 @@ const handleLogin = async () => {
                 });
                 // 由于 token 是 AxiosResponse 类型，需要提取其中的数据部分，通常响应数据在 data 属性中
                 localStorage.setItem('mock-token', token.data);
-                window.location.href = '/';
+                window.location.href = '/games';
             } catch (error) {
                 console.error('登录失败:', error);
             }

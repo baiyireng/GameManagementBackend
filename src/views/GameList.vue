@@ -17,17 +17,19 @@ interface GameItem {
 
 // 初始化表格数据
 const gameList = ref<GameItem[]>([]);
-
-// 模拟加载游戏数据（实际应调用接口）
-onMounted(async () => {
+const getGameList = async () => {
     try {
         const res = await request.get('/api/games'); // 假设接口返回游戏列表
-        console.log(res);
 
         gameList.value = res;
     } catch (error) {
         ElMessage.error('加载游戏列表失败');
     }
+};
+
+// 模拟加载游戏数据（实际应调用接口）
+onMounted(() => {
+    getGameList();
 });
 
 // 状态标签颜色映射
@@ -69,14 +71,14 @@ const statusColorMap: Record<GameItem['status'], string> = {
             <!-- 运行端列 -->
             <el-table-column prop="platform" label="运行端" width="120">
                 <template #default="scope">
-                    <el-tag type="success" size="small">{{ scope.row.platform }}</el-tag>
+                    <el-tag type="success">{{ scope.row.platform }}</el-tag>
                 </template>
             </el-table-column>
 
             <!-- 状态列 -->
             <el-table-column prop="status" label="上下架状态" width="140">
                 <template #default="scope">
-                    <el-tag :type="statusColorMap[scope.row.status]" size="medium">
+                    <el-tag :type="statusColorMap[scope.row.status]">
                         {{ scope.row.status }}
                     </el-tag>
                 </template>

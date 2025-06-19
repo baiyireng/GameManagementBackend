@@ -14,6 +14,7 @@ const routes: RouteRecordRaw[] = [
         component: MainLayout,
         children: [
             { path: 'games', name: 'GameList', component: () => import('../views/GameList.vue') }, // 新增：游戏管理路由
+            { path: 'add-game', name: 'AddGame', component: () => import('../views/AddGame.vue') },
             //   { path: 'users', name: 'UserList', component: UserList }
         ],
     },

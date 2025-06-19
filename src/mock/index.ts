@@ -49,4 +49,39 @@ export default [
             res.end(`hello, ${reqbody}`);
         },
     },
+    {
+        url:'/api/addGame',
+        method: 'post',
+        response: 
+        {
+            "code": 200,
+            "data": [{
+                    id: 1,
+                    name: '传奇霸业',
+                    type: '角色扮演',
+                    platform: 'PC',
+                    status: '已发布',
+                    cover: 'https://via.placeholder.com/80x60?text=Game+Cover',
+                    updateTime: '2023-09-20 14:30:00'
+                }, {
+                    id: 2,
+                    name: '全民枪战',
+                    type: '射击游戏',
+                    platform: '移动端',
+                    status: '开发中',
+                    cover: 'https://via.placeholder.com/80x60?text=Game+Cover',
+                    updateTime: '2023-09-15 11:20:00'
+                }, {
+                    id: 3,
+                    name: '天天农场',
+                    type: '休闲益智',
+                    platform: '移动端',
+                    status: '下架',
+                    cover: 'https://via.placeholder.com/80x60?text=Game+Cover',
+                    updateTime: '2023-09-10 09:15:00'
+                }],
+            "message": "游戏新增成功",
+        },
+        statusCode: 200,
+    }
 ] as MockMethod[];

@@ -34,6 +34,7 @@ const handleLogout = () => {
                     <el-menu-item index="/users">用户管理</el-menu-item>
                     <el-menu-item index="/settings">系统设置</el-menu-item>
                     <el-menu-item index="/edit-character">角色编辑器</el-menu-item>
+                    <el-menu-item index="/edit-event">事件编辑器</el-menu-item>
                     <el-menu-item index="/edit-location">场地编辑器</el-menu-item>
                 </el-menu>
             </el-aside>

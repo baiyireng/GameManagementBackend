@@ -62,6 +62,9 @@ interface Character {
 interface Event {
     title: string;
     content: string;
+    image: {
+        url: string;
+    };
     options: Array<{
         text: string;
         effects: object;

@@ -114,7 +114,7 @@ const updateProperty = (
                 </template>
             </el-table-column>
 
-            <el-table-column label="数值" prop="value">
+            <el-table-column label="数值" prop="value" width="160">
                 <template #default="{ $index }">
                     <div v-if="properties[$index].type === 'string'">
                         <el-input v-model="properties[$index].value" style="width: 100%" />

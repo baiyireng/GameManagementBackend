@@ -150,4 +150,8 @@ const performSearch = () => {
         padding: 12px 0;
     }
 }
+:deep(.el-card__body) {
+    max-height: calc(100vh - 248px);
+    overflow-y: auto;
+}
 </style>

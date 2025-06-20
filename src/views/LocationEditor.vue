@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import PropertyEditor from '@/components/PropertyEditor.vue';
+import ImageUploader from '@/components/ImageUploader.vue';
 
 // 定义场地类型
 interface Location {
     name: string;
     description: string;
-    backgroundImage: string;
+    backgroundImage: {
+        url: string;
+    };
     environmentType: string;
     weatherSystem: string;
     specialEffects: Record<string, any>;
@@ -25,7 +28,9 @@ interface Location {
 const formData = ref<Location>({
     name: '',
     description: '',
-    backgroundImage: 'https://via.placeholder.com/600x200',
+    backgroundImage: {
+        url: 'https://via.placeholder.com/600x200',
+    },
     environmentType: '',
     weatherSystem: '',
     specialEffects: {},
@@ -38,6 +43,9 @@ const formData = ref<Location>({
 const submitForm = () => {
     console.log('保存场地数据:', formData.value);
     // TODO: 实际保存逻辑
+};
+const updateProperties = (props: Character['properties']) => {
+    formData.value.properties = props;
 };
 </script>
 
@@ -60,9 +68,10 @@ const submitForm = () => {
                 <el-input v-model="formData.description" type="textarea" :rows="3" />
             </el-form-item>
 
-            <!-- 背景图片地址 -->
-            <el-form-item label="背景图片地址">
-                <el-input v-model="formData.backgroundImage" placeholder="请输入图片URL" />
+            <!-- 背景图片上传 -->
+            <el-form-item label="背景图片">
+                <el-input v-model="formData.backgroundImage.url" placeholder="请输入图片URL" />
+                <ImageUploader v-model:model-value="formData.backgroundImage" :show-input="false" />
             </el-form-item>
 
             <!-- 环境类型 -->
@@ -100,7 +109,7 @@ const submitForm = () => {
             <el-form-item label="场地属性">
                 <PropertyEditor
                     :properties="formData.properties"
-                    @update:properties="(props) => (formData.properties = props)"
+                    @update:properties="updateProperties"
                 />
             </el-form-item>
 
@@ -124,5 +133,10 @@ const submitForm = () => {
         font-weight: 600;
         color: #303133;
     }
+}
+
+:deep(.el-card__body) {
+    max-height: calc(100vh - 248px);
+    overflow-y: auto;
 }
 </style>

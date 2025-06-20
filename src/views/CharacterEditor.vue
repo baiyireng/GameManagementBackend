@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import PropertyEditor from '@/components/PropertyEditor.vue';
+import ImageUploader from '@/components/ImageUploader.vue';
 
 // 定义角色类型
 interface Character {
     name: string;
     description: string;
-    image: string;
+    image: {
+        url: string;
+    };
     properties: Array<{
         key: string;
         description: string;
@@ -20,9 +23,15 @@ interface Character {
 const formData = ref<Character>({
     name: '',
     description: '',
-    image: 'https://via.placeholder.com/150',
+    image: {
+        url: 'https://via.placeholder.com/150',
+    },
     properties: [],
 });
+
+const updateProperties = (props: Character['properties']) => {
+    formData.value.properties = props;
+};
 
 // 提交表单
 const submitForm = () => {
@@ -39,7 +48,7 @@ const submitForm = () => {
             </div>
         </template>
 
-        <el-form :model="formData" label-width="120px" style="max-width: 900px">
+        <el-form :model="formData" label-width="120px" style="max-width: 1000px">
             <!-- 角色名称 -->
             <el-form-item label="角色名称">
                 <el-input v-model="formData.name" />
@@ -50,16 +59,17 @@ const submitForm = () => {
                 <el-input v-model="formData.description" type="textarea" :rows="3" />
             </el-form-item>
 
-            <!-- 图片地址 -->
-            <el-form-item label="图片地址">
-                <el-input v-model="formData.image" placeholder="请输入图片URL" />
+            <!-- 图片上传 -->
+            <el-form-item label="角色图片">
+                <el-input v-model="formData.image.url" placeholder="请输入图片URL" />
+                <ImageUploader v-model:model-value="formData.image" :show-input="false" />
             </el-form-item>
 
             <!-- 属性编辑器 -->
             <el-form-item label="角色属性">
                 <PropertyEditor
                     :properties="formData.properties"
-                    @update:properties="(props) => (formData.properties = props)"
+                    @update:properties="updateProperties"
                 />
             </el-form-item>
 
@@ -83,5 +93,10 @@ const submitForm = () => {
         font-weight: 600;
         color: #303133;
     }
+}
+
+:deep(.el-card__body) {
+    max-height: calc(100vh - 248px);
+    overflow-y: auto;
 }
 </style>

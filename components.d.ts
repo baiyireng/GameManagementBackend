@@ -33,6 +33,7 @@ declare module 'vue' {
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTag: typeof import('element-plus/es')['ElTag']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    FormulaEditor: typeof import('./src/components/FormulaEditor.vue')['default']
     ImageUploader: typeof import('./src/components/ImageUploader.vue')['default']
     MainLayout: typeof import('./src/components/layout/MainLayout.vue')['default']
     PropertyEditor: typeof import('./src/components/PropertyEditor.vue')['default']

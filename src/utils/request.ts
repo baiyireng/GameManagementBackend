@@ -79,6 +79,19 @@ export const getEvent = (id: string): Promise<never> => {
     });
 };
 
+// export const getEvent = (id: string): Promise<never> => {
+//     return fetch('/mock/eventData.json')
+//         .then(response => response.json())
+//         .then(data => {
+//             const event = data.events.find((e: never) => e.id === id);
+//             if (event) {
+//                 return event;
+//             } else {
+//                 throw new Error(`未找到事件 ID 为 ${id} 的数据`);
+//             }
+//         });
+// };
+
 // 保存事件数据
 export const saveEvent = (event: never): Promise<void> => {
     return new Promise((resolve, reject) => {

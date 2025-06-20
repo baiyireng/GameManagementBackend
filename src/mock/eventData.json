@@ -11,10 +11,17 @@
             "id": "event_001",
             "title": "遭遇野兽",
             "content": "你在森林中遭遇了一只狂暴的狼，它正向你扑来！",
-            "image": {
-                "url": "https://via.placeholder.com/600x200"
+            "icon": {
+                "url": ""
             },
-            "triggerCondition": "角色魅力>15",
+            "image": {
+                "url": ""
+            },
+            "triggerCondition": {
+                "name": "触发条件",
+                "description": "角色属性判断",
+                "formula": "charisma > 15"
+            },
             "options": [
                 {
                     "text": "尝试说服野兽",

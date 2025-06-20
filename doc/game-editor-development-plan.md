@@ -66,11 +66,25 @@ interface Event {
     image: {
         url: string;
     };
+    icon: {
+        url: string;
+    };
+    triggerCondition?: {
+        name: string; // 公式名称（如：角色属性判断）
+        description: string; // 描述（如：角色魅力>15）
+        formula: string; // 实际公式（如：charisma > 15）
+    };
     options: Array<{
         text: string;
         effects: object;
         rewards?: object;
         penalties?: object;
+        condition?: string; // 显示条件（如：角色属性大于某值）
+        conditionFormula?: {
+            name: string;
+            description: string;
+            formula: string;
+        }; // 条件公式
     }>;
     rewardRange?: {
         min: number;

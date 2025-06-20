@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import PropertyEditor from '@/components/PropertyEditor.vue';
 import ImageUploader from '@/components/ImageUploader.vue';
+import FormulaEditor from '@/components/FormulaEditor.vue';
 import { getEvent, saveEvent } from '@/utils/request';
 
 // 定义事件选项类型
@@ -11,6 +12,11 @@ interface EventOption {
     rewards?: Record<string, any>; // 奖励内容（例如：金币、道具等）
     penalties?: Record<string, any>; // 惩罚内容（例如：生命值减少）
     condition?: string; // 显示条件（如：角色属性大于某值）
+    conditionFormula?: {
+        name: string;
+        description: string;
+        formula: string;
+    }; // 条件公式
 }
 
 // 定义事件类型
@@ -21,7 +27,14 @@ interface GameEvent {
     image: {
         url: string;
     };
-    triggerCondition?: string; // 触发条件（如：角色魅力>15）
+    icon: {
+        url: string;
+    };
+    triggerCondition?: {
+        name: string;
+        description: string;
+        formula: string;
+    }; // 触发条件公式
     options: EventOption[]; // 可选分支列表
     rewardRange?: {
         min: number;
@@ -38,6 +51,14 @@ const formData = ref<GameEvent>({
     image: {
         url: 'https://via.placeholder.com/600x200',
     },
+    icon: {
+        url: 'https://via.placeholder.com/150',
+    },
+    triggerCondition: {
+        name: '触发条件',
+        description: '角色属性判断',
+        formula: 'charisma > 15',
+    },
     options: [],
     rewardRange: { min: 0, max: 0 },
     probability: 1,
@@ -48,7 +69,23 @@ const loadEventData = async () => {
     try {
         const data = await getEvent(formData.value.id);
         if (data) {
-            formData.value = data;
+            // 确保 triggerCondition 存在
+            formData.value.triggerCondition = data.triggerCondition ?? {
+                name: '触发条件',
+                description: '角色属性判断',
+                formula: 'charisma > 15',
+            };
+
+            // 确保每个选项的 conditionFormula 存在
+            formData.value.options =
+                data.options?.map((opt: any) => ({
+                    ...opt,
+                    conditionFormula: opt.conditionFormula ?? {
+                        name: '条件判断',
+                        description: '选项显示条件',
+                        formula: '',
+                    },
+                })) || [];
         }
     } catch (error) {
         console.error('加载事件数据失败:', error);
@@ -80,9 +117,9 @@ onMounted(() => {
         </template>
 
         <el-form :model="formData" label-width="120px" style="max-width: 900px">
-            <!-- 事件触发条件 -->
+            <!-- 事件触发条件公式 -->
             <el-form-item label="触发条件">
-                <el-input v-model="formData.triggerCondition" placeholder="如：角色魅力>15" />
+                <FormulaEditor v-model:model-value="formData.triggerCondition" />
             </el-form-item>
 
             <!-- 事件标题 -->
@@ -90,9 +127,16 @@ onMounted(() => {
                 <el-input v-model="formData.title" />
             </el-form-item>
 
+            <!-- 事件图标 -->
+            <el-form-item label="事件图标">
+                <el-input v-model="formData.icon.url" placeholder="请输入图片URL" />
+                <ImageUploader v-model:model-value="formData.icon" :show-input="false" />
+            </el-form-item>
+
             <!-- 事件插图 -->
             <el-form-item label="事件插图">
-                <ImageUploader v-model:model-value="formData.image" :show-input="true" />
+                <el-input v-model="formData.image.url" placeholder="请输入图片URL" />
+                <ImageUploader v-model:model-value="formData.image" :show-input="false" />
             </el-form-item>
 
             <!-- 事件内容 -->
@@ -160,6 +204,10 @@ onMounted(() => {
                             placeholder="如：角色力量>10"
                             style="margin-bottom: 10px"
                         />
+                        <el-form-item label="条件公式">
+                            <FormulaEditor v-model:model-value="option.conditionFormula" />
+                        </el-form-item>
+
                         <el-button type="danger" @click="() => formData.options.splice(index, 1)"
                             >删除</el-button
                         >
@@ -173,6 +221,11 @@ onMounted(() => {
                                     effects: { description: '' },
                                     rewards: { description: '' },
                                     penalties: { description: '' },
+                                    conditionFormula: {
+                                        name: '条件判断',
+                                        description: '选项显示条件',
+                                        formula: '',
+                                    },
                                 })
                         "
                         >新增选项</el-button

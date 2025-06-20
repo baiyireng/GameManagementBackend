@@ -1,6 +1,7 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import { ElMessage, ElLoading } from 'element-plus'; // 新增：导入ElLoading
 import { type InternalAxiosRequestConfig } from 'axios';
+import mockData from '../mock/eventData.json'; // 假设有一个mock数据文件
 
 interface ApiResponse<T> {
     code: number; // 业务状态码（200为成功）
@@ -63,3 +64,32 @@ service.interceptors.response.use(
 );
 
 export default service;
+
+// 获取事件数据
+export const getEvent = (id: string): Promise<never> => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const event = mockData.events.find(e => e.id === id);
+            if (event) {
+                resolve(event);
+            } else {
+                reject(new Error(`未找到事件 ID 为 ${id} 的数据`));
+            }
+        }, 500);
+    });
+};
+
+// 保存事件数据
+export const saveEvent = (event: never): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const index = mockData.events.findIndex(e => e.id === event.id);
+            if (index !== -1) {
+                mockData.events[index] = event;
+            } else {
+                mockData.events.push(event);
+            }
+            resolve();
+        }, 500);
+    });
+};

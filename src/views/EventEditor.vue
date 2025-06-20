@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import PropertyEditor from '@/components/PropertyEditor.vue';
 import ImageUploader from '@/components/ImageUploader.vue';
+import { getEvent, saveEvent } from '@/utils/request';
 
 // 定义事件选项类型
 interface EventOption {
@@ -9,22 +10,29 @@ interface EventOption {
     effects: Record<string, any>; // 效果（如：{ hp: -10, mp: +5 }）
     rewards?: Record<string, any>; // 奖励内容（例如：金币、道具等）
     penalties?: Record<string, any>; // 惩罚内容（例如：生命值减少）
+    condition?: string; // 显示条件（如：角色属性大于某值）
 }
 
 // 定义事件类型
 interface GameEvent {
+    id: string;
     title: string; // 事件标题
     content: string; // 事件描述
     image: {
-        url: string; // 图片地址
+        url: string;
     };
+    triggerCondition?: string; // 触发条件（如：角色魅力>15）
     options: EventOption[]; // 可选分支列表
-    rewardRange?: { min: number; max: number }; // 奖励范围
-    probability?: number; // 随机概率（例如：0.3 表示 30%）
+    rewardRange?: {
+        min: number;
+        max: number;
+    };
+    probability?: number;
 }
 
 // 初始化表单数据
 const formData = ref<GameEvent>({
+    id: 'event_001',
     title: '',
     content: '',
     image: {
@@ -35,11 +43,32 @@ const formData = ref<GameEvent>({
     probability: 1,
 });
 
-// 提交表单
-const submitForm = () => {
-    console.log('保存事件数据:', formData.value);
-    // TODO: 实际保存逻辑
+// 加载事件数据
+const loadEventData = async () => {
+    try {
+        const data = await getEvent(formData.value.id);
+        if (data) {
+            formData.value = data;
+        }
+    } catch (error) {
+        console.error('加载事件数据失败:', error);
+    }
 };
+
+// 提交表单
+const submitForm = async () => {
+    try {
+        await saveEvent(formData.value);
+        console.log('事件数据保存成功:', formData.value);
+    } catch (error) {
+        console.error('保存事件数据失败:', error);
+    }
+};
+
+// 页面加载时获取事件数据
+onMounted(() => {
+    loadEventData();
+});
 </script>
 
 <template>
@@ -51,24 +80,24 @@ const submitForm = () => {
         </template>
 
         <el-form :model="formData" label-width="120px" style="max-width: 900px">
+            <!-- 事件触发条件 -->
+            <el-form-item label="触发条件">
+                <el-input v-model="formData.triggerCondition" placeholder="如：角色魅力>15" />
+            </el-form-item>
+
             <!-- 事件标题 -->
             <el-form-item label="事件标题">
                 <el-input v-model="formData.title" />
             </el-form-item>
 
+            <!-- 事件插图 -->
+            <el-form-item label="事件插图">
+                <ImageUploader v-model:model-value="formData.image" :show-input="true" />
+            </el-form-item>
+
             <!-- 事件内容 -->
             <el-form-item label="事件内容">
                 <el-input v-model="formData.content" type="textarea" :rows="3" />
-            </el-form-item>
-
-            <!-- 事件插图 -->
-            <el-form-item label="事件插图">
-                <el-input
-                    v-model="formData.image.url"
-                    placeholder="请输入图片URL"
-                    style="width: 100%"
-                />
-                <ImageUploader v-model:model-value="formData.image" :show-input="false" />
             </el-form-item>
 
             <!-- 奖励范围 -->
@@ -124,6 +153,11 @@ const submitForm = () => {
                         <el-input
                             v-model="option.penalties.description"
                             placeholder="惩罚内容（如：生命值-20）"
+                            style="margin-bottom: 10px"
+                        />
+                        <el-input
+                            v-model="option.condition"
+                            placeholder="如：角色力量>10"
                             style="margin-bottom: 10px"
                         />
                         <el-button type="danger" @click="() => formData.options.splice(index, 1)"

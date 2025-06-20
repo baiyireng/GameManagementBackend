@@ -1,0 +1,53 @@
+{
+    "games": [
+        {
+            "id": "game_001",
+            "name": "冒险之旅",
+            "description": "一个充满挑战与机遇的奇幻世界"
+        }
+    ],
+    "events": [
+        {
+            "id": "event_001",
+            "title": "遭遇野兽",
+            "content": "你在森林中遭遇了一只狂暴的狼，它正向你扑来！",
+            "image": {
+                "url": "https://via.placeholder.com/600x200"
+            },
+            "triggerCondition": "角色魅力>15",
+            "options": [
+                {
+                    "text": "尝试说服野兽",
+                    "effects": {
+                        "description": "HP+0"
+                    },
+                    "rewards": {
+                        "description": "金币x10"
+                    },
+                    "penalties": {
+                        "description": "无"
+                    },
+                    "condition": "角色魅力>15"
+                },
+                {
+                    "text": "战斗",
+                    "effects": {
+                        "description": "HP-20"
+                    },
+                    "rewards": {
+                        "description": "经验值x50"
+                    },
+                    "penalties": {
+                        "description": "生命值-20"
+                    },
+                    "condition": "角色力量>10"
+                }
+            ],
+            "rewardRange": {
+                "min": 0,
+                "max": 0
+            },
+            "probability": 1
+        }
+    ]
+}

@@ -34,7 +34,8 @@
                     "penalties": {
                         "description": "无"
                     },
-                    "condition": "角色魅力>15"
+                    "condition": "角色魅力>15",
+                    "nextEventId": "event_002"
                 },
                 {
                     "text": "战斗",
@@ -47,7 +48,8 @@
                     "penalties": {
                         "description": "生命值-20"
                     },
-                    "condition": "角色力量>10"
+                    "condition": "角色力量>10",
+                    "nextEventId": "event_003"
                 }
             ],
             "rewardRange": {
@@ -55,6 +57,113 @@
                 "max": 0
             },
             "probability": 1
+        },
+        {
+            "id": "event_002",
+            "title": "成功说服",
+            "content": "你成功说服了野兽，它放过了你。",
+            "icon": {
+                "url": ""
+            },
+            "image": {
+                "url": ""
+            },
+            "options": [
+                {
+                    "text": "继续前行",
+                    "effects": {
+                        "description": "HP+0"
+                    },
+                    "rewards": {
+                        "description": "金币x5"
+                    },
+                    "penalties": {
+                        "description": "无"
+                    },
+                    "nextEventId": "event_004"
+                }
+            ]
+        },
+        {
+            "id": "event_003",
+            "title": "战斗胜利",
+            "content": "你战胜了野兽，获得了奖励。",
+            "icon": {
+                "url": ""
+            },
+            "image": {
+                "url": ""
+            },
+            "options": [
+                {
+                    "text": "继续前行",
+                    "effects": {
+                        "description": "HP+0"
+                    },
+                    "rewards": {
+                        "description": "金币x20"
+                    },
+                    "penalties": {
+                        "description": "无"
+                    },
+                    "nextEventId": "event_004"
+                }
+            ]
+        },
+        {
+            "id": "event_004",
+            "title": "新的旅程",
+            "content": "你来到了一个新的路口，准备前往下一个目的地。",
+            "icon": {
+                "url": ""
+            },
+            "image": {
+                "url": ""
+            },
+            "options": [
+                {
+                    "text": "选择A",
+                    "effects": {
+                        "description": "HP+0"
+                    },
+                    "rewards": {
+                        "description": "金币x5"
+                    },
+                    "nextEventId": "event_005"
+                },
+                {
+                    "text": "选择B",
+                    "effects": {
+                        "description": "HP+0"
+                    },
+                    "rewards": {
+                        "description": "经验值x10"
+                    },
+                    "nextEventId": "event_006"
+                }
+            ]
+        },
+        {
+            "id": "event_005",
+            "title": "结局A",
+            "content": "你选择了A路径，故事走向了和平结局。",
+            "icon": {
+                "url": ""
+            },
+            "image": {
+                "url": ""
+            }
+        },
+        {
+            "id": "event_006",
+            "title": "结局B",
+            "content": "你选择了B路径，故事走向了冒险结局。",
+            "icon": {
+                "url": ""
+            },
+            "image": {
+                "url": ""
+            }
         }
     ]
 }

@@ -85,6 +85,7 @@ interface Event {
             description: string;
             formula: string;
         }; // 条件公式
+        nextEventId?: string; // 后续事件ID
     }>;
     rewardRange?: {
         min: number;

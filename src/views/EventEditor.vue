@@ -17,6 +17,7 @@ interface EventOption {
         description: string;
         formula: string;
     }; // 条件公式
+    nextEventId?: string; // 后续事件ID
 }
 
 // 定义事件类型
@@ -202,6 +203,11 @@ onMounted(() => {
                         <el-input
                             v-model="option.condition"
                             placeholder="如：角色力量>10"
+                            style="margin-bottom: 10px"
+                        />
+                        <el-input
+                            v-model="option.nextEventId"
+                            placeholder="输入后续事件ID（可选）"
                             style="margin-bottom: 10px"
                         />
                         <el-form-item label="条件公式">

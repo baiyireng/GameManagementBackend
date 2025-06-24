@@ -33,10 +33,13 @@
 - 关联事件（指定固定事件池和随机事件权重）
 
 ### 4. 技能编辑器（SkillEditor.vue）
-- 编辑技能基础信息（名称、描述、类型、冷却时间、消耗资源）
-- 定义技能效果（伤害、治疗、Buff、Debuff 等）
-- 支持配置 Buff/Debuff 的持续时间、触发几率、叠加规则等
-- 可绑定到角色或事件中使用
+- 左侧表单区填写技能基本信息（名称、描述、类型、冷却、消耗等）
+- 右侧效果区以列表形式展示所有技能效果，支持增删改查
+- 新增效果按钮弹出模态框选择效果类型，并设置参数
+- 预览区域展示技能组合后的总效果
+- 支持公式字段输入，如 `attack * 2 + level * 5`
+- 支持 Buff/Debuff 系统联动配置
+- 可绑定到角色、怪物、装备、建筑等多个对象上使用
 
 ## 数据模型
 
@@ -127,16 +130,39 @@ interface CharacterSkill {
     type: 'active' | 'passive';
     cooldown: number;
     cost: number;
+    costType: 'mp' | 'sp' | 'hp' | 'none';
+    triggerLimit?: {
+        levelRequired: number;
+        conditionFormula?: {
+            name: string;
+            description: string;
+            formula: string;
+        };
+    };
+    targetType: 'self' | 'enemy' | 'ally' | 'all' | 'single_enemy' | 'single_ally';
     effects: Array<{
-        effectType: 'damage' | 'heal' | 'buff' | 'debuff' | 'stun';
-        targetType: 'self' | 'enemy' | 'allies' | 'single_enemy';
+        effectType: 'damage' | 'heal' | 'buff' | 'debuff' | 'stun' | 'custom';
+        targetType: 'self' | 'enemy' | 'ally' | 'all';
         value?: number;
         percentage?: number;
         duration?: number;
-        chance?: number;
-    }>;
+        formula?: string;
+        buffId?: string;
+    }>,
+    priority?: number;
+    tags?: string[];
+    applicableTo: Array<'character' | 'monster' | 'equipment' | 'building'>;
 }
 ```
+
+### 4. 技能编辑器（SkillEditor.vue）
+- 左侧表单区填写技能基本信息（名称、描述、类型、冷却、消耗等）
+- 右侧效果区以列表形式展示所有技能效果，支持增删改查
+- 新增效果按钮弹出模态框选择效果类型，并设置参数
+- 预览区域展示技能组合后的总效果
+- 支持公式字段输入，如 `attack * 2 + level * 5`
+- 支持 Buff/Debuff 系统联动配置
+- 可绑定到角色、怪物、装备、建筑等多个对象上使用
 
 ## 界面设计
 

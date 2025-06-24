@@ -120,7 +120,16 @@ onMounted(() => {
         <el-form :model="formData" label-width="120px" style="max-width: 900px">
             <!-- 事件触发条件公式 -->
             <el-form-item label="触发条件">
-                <FormulaEditor v-model:model-value="formData.triggerCondition" />
+                <FormulaEditor
+                    v-model:model-value="formData.triggerCondition"
+                    :model-value="
+                        formData.triggerCondition ?? {
+                            name: '触发条件',
+                            description: '角色属性判断',
+                            formula: 'charisma > 15',
+                        }
+                    "
+                />
             </el-form-item>
 
             <!-- 事件标题 -->
@@ -211,7 +220,16 @@ onMounted(() => {
                             style="margin-bottom: 10px"
                         />
                         <el-form-item label="条件公式">
-                            <FormulaEditor v-model:model-value="option.conditionFormula" />
+                            <FormulaEditor
+                                v-model:model-value="option.conditionFormula"
+                                :model-value="
+                                    option.conditionFormula ?? {
+                                        name: '条件判断',
+                                        description: '选项显示条件',
+                                        formula: '',
+                                    }
+                                "
+                            />
                         </el-form-item>
 
                         <el-button type="danger" @click="() => formData.options.splice(index, 1)"

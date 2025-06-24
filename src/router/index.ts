@@ -17,7 +17,8 @@ const routes: RouteRecordRaw[] = [
             { path: 'add-game', name: 'AddGame', component: () => import('../views/AddGame.vue') },
             { path: '/edit-character',name: 'CharacterEditor',component: () => import('../views/CharacterEditor.vue')},
             { path: '/edit-event',name: 'EventEditor',component: () => import('../views/EventEditor.vue')},
-            { path: '/edit-location',name: 'LocationEditor',component: () => import('../views/LocationEditor.vue')}
+            { path: '/edit-location',name: 'LocationEditor',component: () => import('../views/LocationEditor.vue')},
+            { path: '/edit-skill', name: 'SkillEditor', component: () => import('../views/SkillEditor.vue') }
         ],
     },
 ];

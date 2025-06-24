@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 
 // 定义公式类型
 interface FormulaField {
@@ -32,15 +32,11 @@ const emit = defineEmits<{
 // 更新表单数据
 const updateFormula = () => {
     emit('update:modelValue', {
-        name: props.modelValue.name,
-        description: props.modelValue.description,
-        formula: formulaInput.value,
+        name: props.modelValue?.name || '自定义公式',
+        description: props.modelValue?.description || '请输入表达式',
+        formula: formula.value,
     });
 };
-
-// 输入框引用
-const formula = ref(props.modelValue.formula);
-
 // 插入变量到公式中
 const insertVariable = (variable: string, input: string) => {
     if (!input) {
@@ -62,14 +58,36 @@ const insertVariable = (variable: string, input: string) => {
 };
 
 // 输入框引用
-const formulaInput = ref<InstanceType<typeof ElInput> | null>(null);
+const formula = ref('');
+
+// 初始化时赋值
+const initFormula = () => {
+    if (props.modelValue && props.modelValue.formula) {
+        formula.value = props.modelValue.formula;
+    } else {
+        formula.value = '';
+    }
+};
+
+// 监听props变化
+watch(
+    () => props.modelValue,
+    () => {
+        initFormula();
+    },
+);
+
+// 在组件挂载后初始化数据
+onMounted(() => {
+    initFormula();
+});
 
 // 过滤建议列表
 const filteredSuggestions = ref<typeof availableVariables>([]);
 
 // 输入搜索时过滤建议
 const onInput = (value: string) => {
-    formulaInput.value = value;
+    formula.value = value;
     updateFormula();
     filterSuggestions(value);
 };
@@ -93,6 +111,7 @@ const filterSuggestions = (input: string) => {
 <template>
     <div class="formula-editor">
         <el-form label-width="100px">
+            <!-- 公式名称 -->
             <el-form-item label="公式名称">
                 <el-input v-model="modelValue.name" disabled />
             </el-form-item>

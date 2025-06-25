@@ -127,6 +127,12 @@ interface CharacterSkill {
     id: string;
     name: string;
     description: string;
+    icon: {
+        url: string;
+    };
+    image: {
+        url: string;
+    };
     type: 'active' | 'passive';
     cooldown: number;
     cost: number;
@@ -146,16 +152,20 @@ interface CharacterSkill {
         value?: number;
         percentage?: number;
         duration?: number;
-        formula?: string;
+        formula?: {
+            name: string;
+            description: string;
+            formula: string;
+        };
         buffId?: string;
-    }>,
+    }>;
     priority?: number;
     tags?: string[];
     applicableTo: Array<'character' | 'monster' | 'equipment' | 'building'>;
 }
 ```
 
-### 4. 技能编辑器（SkillEditor.vue）
+### 5. 技能编辑器（SkillEditor.vue）
 - 左侧表单区填写技能基本信息（名称、描述、类型、冷却、消耗等）
 - 右侧效果区以列表形式展示所有技能效果，支持增删改查
 - 新增效果按钮弹出模态框选择效果类型，并设置参数
@@ -163,6 +173,7 @@ interface CharacterSkill {
 - 支持公式字段输入，如 `attack * 2 + level * 5`
 - 支持 Buff/Debuff 系统联动配置
 - 可绑定到角色、怪物、装备、建筑等多个对象上使用
+- 使用 FormulaEditor 组件支持完整 FormulaField 对象编辑
 
 ## 界面设计
 
@@ -250,7 +261,7 @@ interface CharacterSkill {
 
 ### 第二阶段：事件与技能编辑器开发
 - ✅ 事件编辑器（EventEditor.vue）
-- 🟡 技能编辑器（SkillEditor.vue）
+- ✅ 技能编辑器（SkillEditor.vue）
 - 🟡 事件流程图可视化模块（Vue Flow）
 - 🟡 事件与技能的数据绑定
 

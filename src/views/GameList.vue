@@ -13,6 +13,13 @@ interface GameItem {
     cover: string; // 封面图路径（支持本地或远程URL）
     updateTime: string; // 更新时间
     releaseTime?: string; // 发布时间（可选）
+    // 新增字段：编辑管理入口
+    editorEntry?: {
+        character: string; // 角色编辑器路径
+        event: string; // 事件编辑器路径
+        location: string; // 场地编辑器路径
+        skill: string; // 技能编辑器路径
+    };
 }
 
 // 初始化表格数据
@@ -40,6 +47,12 @@ const statusColorMap: Record<GameItem['status'], string> = {
     已发布: 'success',
     开发中: 'info',
     下架: 'danger',
+};
+
+// 处理编辑游戏按钮点击事件
+const handleEdit = (game: GameItem) => {
+    // 假设通过游戏ID跳转到对应的编辑页面
+    window.location.href = `/edit-game/${game.id}`;
 };
 
 // 处理新增游戏按钮点击事件
@@ -119,6 +132,18 @@ const performSearch = () => {
 
             <!-- 发布时间列（可选） -->
             <el-table-column prop="releaseTime" label="正式发布时间" width="180" />
+
+            <!-- 操作列 -->
+            <el-table-column label="操作" width="180">
+                <template #default="scope">
+                    <el-button
+                        size="small"
+                        @click="handleEdit(scope.row)"
+                        >编辑管理</el-button
+                    >
+                    <el-button size="small" type="danger">删除</el-button>
+                </template>
+            </el-table-column>
         </el-table>
     </el-card>
 </template>

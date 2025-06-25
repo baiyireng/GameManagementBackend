@@ -13,6 +13,7 @@
         "dev:real": "vite --mode real"
     },
     "dependencies": {
+        "@vue-flow/core": "^1.45.0",
         "axios": "^1.9.0",
         "element-plus": "^2.9.11",
         "mockjs": "^1.1.0",

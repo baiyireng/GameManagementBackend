@@ -41,6 +41,20 @@
 - 支持 Buff/Debuff 系统联动配置
 - 可绑定到角色、怪物、装备、建筑等多个对象上使用
 
+### 6. 游戏流程编辑（EditGame.vue）
+```
+interface GameEditorEntry {
+    character: string; // 角色编辑器路径
+    event: string; // 事件编辑器路径
+    location: string; // 场地编辑器路径
+    skill: string; // 技能编辑器路径
+}
+```
+- 提供角色、事件、场地、技能编辑器的快捷入口
+- 集成 Vue Flow 实现可视化流程图编辑
+- 支持节点拖拽与连线配置
+- 后续可扩展为完整的可视化开发环境
+
 ## 数据模型
 
 ### 1. 角色（Character）

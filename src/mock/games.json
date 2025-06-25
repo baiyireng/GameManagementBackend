@@ -9,7 +9,13 @@
             "status": "已发布",
             "cover": "/images/cover1.jpg",
             "updateTime": "2024-03-10 14:30",
-            "releaseTime": "2024-01-01 09:00"
+            "releaseTime": "2024-01-01 09:00",
+            "editorEntry": {
+                "character": "/editor/character/1",
+                "event": "/editor/event/1",
+                "location": "/editor/location/1",
+                "skill": "/editor/skill/1"
+            }
         },
         {
             "id": 2,
@@ -19,7 +25,13 @@
             "status": "已发布",
             "cover": "/images/cover1.jpg",
             "updateTime": "2024-03-10 14:30",
-            "releaseTime": "2024-01-01 09:00"
+            "releaseTime": "2024-01-01 09:00",
+            "editorEntry": {
+                "character": "/editor/character/2",
+                "event": "/editor/event/2",
+                "location": "/editor/location/2",
+                "skill": "/editor/skill/2"
+            }
         }
     ],
     "message": "登录成功"

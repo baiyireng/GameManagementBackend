@@ -69,7 +69,7 @@ export default service;
 export const getEvent = (id: string): Promise<never> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
-            const event = mockData.events.find(e => e.id === id);
+            const event = mockData.events.find((e) => e.id === id);
             if (event) {
                 resolve(event);
             } else {
@@ -96,7 +96,7 @@ export const getEvent = (id: string): Promise<never> => {
 export const saveEvent = (event: never): Promise<void> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
-            const index = mockData.events.findIndex(e => e.id === event.id);
+            const index = mockData.events.findIndex((e) => e.id === event.id);
             if (index !== -1) {
                 mockData.events[index] = event;
             } else {

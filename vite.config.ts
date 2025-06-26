@@ -5,20 +5,32 @@ import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 import { viteMockServe } from 'vite-plugin-mock';
+import path from 'path';
 
+const pathSrc = path.resolve(__dirname, 'src');
 export default defineConfig(({ mode, command }: ConfigEnv) => {
     const isMockMode = mode === 'mock'; // 判断是否为 mock 模式
 
     return {
         plugins: [
             vue(),
-            AutoImport({ resolvers: [ElementPlusResolver()] }),
-            Components({ resolvers: [ElementPlusResolver()] }),
+            AutoImport({ 
+                resolvers: [
+                    ElementPlusResolver()
+                ],
+                dts: path.resolve(pathSrc, 'auto-imports.d.ts'),
+            }),
+            Components({ 
+                resolvers: [
+                    ElementPlusResolver()
+                ] ,
+                dts: 'src/components.d.ts', // 生成组件类型声明文件
+            }),
             viteMockServe({
                 mockPath: 'src/mock', // mock 文件目录（与实际路径一致）
                 watchFiles: true, // 监听文件变化自动更新
                 enable: command === 'serve', // 仅开发模式启用
-            }),
+            })
         ],
         resolve: {
             alias: {

@@ -13,6 +13,7 @@
         "dev:real": "vite --mode real"
     },
     "dependencies": {
+        "@element-plus/icons-vue": "^2.3.1",
         "@vue-flow/core": "^1.45.0",
         "axios": "^1.9.0",
         "element-plus": "^2.9.11",
@@ -41,6 +42,7 @@
         "sass": "^1.89.0",
         "typescript": "~5.8.3",
         "unplugin-auto-import": "^19.3.0",
+        "unplugin-icons": "^22.1.0",
         "unplugin-vue-components": "^28.7.0",
         "vite": "^6.3.5",
         "vue-eslint-parser": "^10.1.3",

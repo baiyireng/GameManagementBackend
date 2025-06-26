@@ -168,8 +168,8 @@ const resetFlowData = () => {
             <template #header>
                 <div class="card-header">
                     <span>可视化流程图</span>
-                    <el-button type="primary" icon="Edit" @click="openFlowEditor"
-                        >全屏编辑</el-button
+                    <el-button type="primary" :icon="'Edit'" @click="openFlowEditor">
+                        全屏编辑</el-button
                     >
                 </div>
             </template>
@@ -299,5 +299,9 @@ const resetFlowData = () => {
 }
 :deep(.vue-flow__container) {
     height: calc(100% - 82px);
+}
+:deep(.el-dialog__body) {
+    height: calc(100% - 82px);
+    width: 100%;
 }
 </style>

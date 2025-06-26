@@ -1,5 +1,8 @@
 // 解析公式
-export const evaluateFormula = (formula: string, context: Record<string, never>): number | boolean => {
+export const evaluateFormula = (
+    formula: string,
+    context: Record<string, never>,
+): number | boolean => {
     try {
         const fn = new Function(...Object.keys(context), `return ${formula}`);
         return fn(...Object.values(context));

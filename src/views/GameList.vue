@@ -136,11 +136,7 @@ const performSearch = () => {
             <!-- 操作列 -->
             <el-table-column label="操作" width="180">
                 <template #default="scope">
-                    <el-button
-                        size="small"
-                        @click="handleEdit(scope.row)"
-                        >编辑管理</el-button
-                    >
+                    <el-button size="small" @click="handleEdit(scope.row)">编辑管理</el-button>
                     <el-button size="small" type="danger">删除</el-button>
                 </template>
             </el-table-column>

@@ -60,6 +60,13 @@ const edges = ref([
 // 全屏流程图编辑器可见性
 const flowEditorVisible = ref(false);
 
+// 手动触发流程图重新渲染
+const refreshFlowChart = () => {
+    // 创建新的节点数组引用，避免响应式数据未更新
+    nodes.value = [...nodes.value];
+    edges.value = [...edges.value];
+};
+
 // 打开流程图编辑器
 const openFlowEditor = () => {
     flowEditorVisible.value = true;
@@ -68,6 +75,8 @@ const openFlowEditor = () => {
 // 关闭流程图编辑器
 const closeFlowEditor = () => {
     flowEditorVisible.value = false;
+    // 延迟执行以确保 DOM 更新完成
+    setTimeout(refreshFlowChart, 300);
 };
 
 // 保存流程图数据
@@ -168,14 +177,19 @@ const resetFlowData = () => {
             <template #header>
                 <div class="card-header">
                     <span>可视化流程图</span>
-                    <el-button type="primary" :icon="'Edit'" @click="openFlowEditor">
-                        全屏编辑</el-button
+                    <el-button type="primary" icon="Edit" @click="openFlowEditor"
+                        >全屏编辑</el-button
                     >
                 </div>
             </template>
 
             <div class="flow-container">
-                <VueFlow class="floow_card_body" :nodes="nodes" :edges="edges" />
+                <VueFlow
+                    class="floow_card_body"
+                    :nodes="nodes"
+                    :edges="edges"
+                    style="width: 100%; height: 100%"
+                />
             </div>
         </el-card>
     </el-card>
@@ -197,10 +211,15 @@ const resetFlowData = () => {
         </div>
 
         <div class="flow-editor-content">
-            <VueFlow v-model:nodes="nodes" v-model:edges="edges" />
+            <VueFlow
+                v-model:nodes="nodes"
+                v-model:edges="edges"
+                style="width: 100%; height: 100vh; overflow: auto"
+            />
         </div>
     </el-dialog>
 </template>
+
 <style>
 /* these are necessary styles for vue flow */
 @import '@vue-flow/core/dist/style.css';
@@ -208,6 +227,7 @@ const resetFlowData = () => {
 /* this contains the default theme, these are optional styles */
 @import '@vue-flow/core/dist/theme-default.css';
 </style>
+
 <style lang="less" scoped>
 .edit-game {
     margin: 24px;
@@ -259,8 +279,18 @@ const resetFlowData = () => {
 
     .flow-container {
         width: 100%;
-        height: 450px;
+        min-height: 450px;
+        max-height: 600px;
+        overflow: auto;
     }
+}
+
+:deep(.vue-flow__node) {
+    display: block !important;
+}
+
+:deep(.vue-flow__edge) {
+    display: block !important;
 }
 
 .flow-editor-dialog {
@@ -292,16 +322,26 @@ const resetFlowData = () => {
 .flow-editor-content {
     width: 100%;
     height: 100%;
+    overflow: hidden;
 }
-:deep(.el-card__body) {
-    width: calc(100% - 40px);
-    height: calc(100% - 108px);
-}
+
 :deep(.vue-flow__container) {
-    height: calc(100% - 82px);
+    height: 100vh !important;
+    width: 100% !important;
 }
+
 :deep(.el-dialog__body) {
-    height: calc(100% - 82px);
-    width: 100%;
+    height: 100vh !important;
+    width: 100% !important;
+}
+
+// /* 确保非全屏时 vue-flow 容器仍能正确渲染 */
+:deep(.floow_card_body .vue-flow__container) {
+    height: 100% !important;
+}
+
+:deep(.floow_card_body) {
+    width: 100% !important;
+    height: 490px !important;
 }
 </style>

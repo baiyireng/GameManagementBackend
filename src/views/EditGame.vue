@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, markRaw, computed } from 'vue';
+import { ref, markRaw, computed, reactive, onMounted, onUnmounted } from 'vue';
 import { VueFlow, useNodes, useEdges } from '@vue-flow/core';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Edit, Delete, CopyDocument, Connection } from '@element-plus/icons-vue';
 import request from '../utils/request';
 import NodePropertyEditor from '../components/NodePropertyEditor.vue';
 
@@ -141,9 +142,211 @@ const nodeTemplates = markRaw({
 // 当前选中的节点
 const selectedNode = ref(null);
 
+// 右键菜单状态
+const contextMenu = reactive({
+    visible: false,
+    x: 0,
+    y: 0,
+    node: null,
+});
+
+// 连接模式状态
+const connectingMode = reactive({
+    active: false,
+    sourceNode: null,
+});
+
 // 节点点击事件
-const onNodeClick = (event, node) => {
+const onNodeClick = (...args) => {
+    // Vue Flow 可能传递 event 和 node 参数，也可能传递包含 node 的对象
+    let node = null;
+    if (args.length > 1) {
+        // 标准格式: (event, node)
+        node = args[1];
+    } else if (args[0]?.node) {
+        // 可能传递的是 { event, node } 对象
+        node = args[0].node;
+    } else {
+        // 未知格式
+        console.error('无法解析节点点击事件参数:', args);
+        return;
+    }
+
+    if (!node?.id) {
+        console.error('无效的节点参数:', node);
+        return;
+    }
+
+    console.log('节点点击:', node.id);
+
+    // 如果处于连接模式，则创建连接
+    if (connectingMode.active) {
+        console.log('连接模式下点击节点，创建连接');
+        createConnection(node);
+        return;
+    }
+
+    // 正常模式下选中节点
+    console.log('选中节点:', node.id);
     selectedNode.value = node;
+};
+
+// 节点右键点击事件
+const onNodeContextMenu = (...args) => {
+    // Vue Flow 可能传递 event 和 node 参数，也可能传递包含 node 的对象
+    let event = null;
+    let node = null;
+
+    if (args.length > 1) {
+        // 标准格式: (event, node)
+        event = args[0];
+        node = args[1];
+    } else if (args[0]?.node) {
+        // 可能传递的是 { event, node } 对象
+        event = args[0].event;
+        node = args[0].node;
+    } else {
+        // 未知格式
+        console.error('无法解析节点右键事件参数:', args);
+        return;
+    }
+
+    if (!node?.id) {
+        console.error('无效的节点参数:', node);
+        return;
+    }
+
+    // Vue Flow 可能传递的是自定义事件对象，需要检查原生事件
+    const nativeEvent = event.event || event;
+
+    // 阻止默认右键菜单
+    if (nativeEvent.preventDefault) {
+        nativeEvent.preventDefault();
+    }
+
+    // 设置右键菜单位置和节点
+    contextMenu.visible = true;
+    contextMenu.x = nativeEvent.clientX || 0;
+    contextMenu.y = nativeEvent.clientY || 0;
+    contextMenu.node = node;
+
+    // 同时选中该节点
+    selectedNode.value = node;
+};
+
+// 关闭右键菜单
+const closeContextMenu = () => {
+    contextMenu.visible = false;
+    // 确保在关闭菜单后重置当前右键菜单节点
+    contextMenu.node = null;
+};
+
+// 全局点击事件处理
+const handleGlobalClick = (event) => {
+    // 如果右键菜单可见，且点击的不是菜单本身，则关闭菜单
+    if (contextMenu.visible) {
+        const menuElement = document.querySelector('.node-context-menu');
+        // 检查点击的元素是否是菜单本身或其子元素
+        if (menuElement && !menuElement.contains(event.target)) {
+            // 检查点击的元素是否是节点，如果是节点则不关闭菜单
+            const isNode = event.target.closest('.vue-flow__node');
+            if (!isNode) {
+                closeContextMenu();
+            }
+        }
+    }
+};
+
+// 确保右键菜单项点击事件正确触发
+const handleMenuItemClick = (action, event) => {
+    // 阻止事件冒泡
+    if (event) {
+        event.stopPropagation();
+    }
+
+    // 验证右键菜单节点数据
+    if (!contextMenu.node?.id) {
+        console.error('无效的右键菜单节点:', contextMenu.node);
+        ElMessage.error('无法操作: 节点数据无效');
+        closeContextMenu();
+        return;
+    }
+
+    // 执行相应的操作
+    if (action === 'edit') {
+        editNode();
+    } else if (action === 'duplicate') {
+        duplicateNode();
+    } else if (action === 'connect') {
+        startConnectingNodes(contextMenu.node);
+    } else if (action === 'remove') {
+        removeContextMenuNode();
+    }
+
+    // 关闭右键菜单
+    closeContextMenu();
+};
+
+// 挂载和卸载全局事件监听器
+onMounted(() => {
+    document.addEventListener('click', handleGlobalClick);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleGlobalClick);
+});
+
+// 编辑节点
+const editNode = () => {
+    // 验证节点数据
+    if (!contextMenu.node || typeof contextMenu.node !== 'object') {
+        console.error('无效的节点参数:', contextMenu.node);
+        ElMessage.error('无法编辑: 节点参数无效');
+        closeContextMenu();
+        return;
+    }
+
+    if (!contextMenu.node.id || typeof contextMenu.node.id !== 'string') {
+        console.error('节点ID无效:', contextMenu.node.id);
+        ElMessage.error('无法编辑: 节点ID无效');
+        closeContextMenu();
+        return;
+    }
+
+    if (!contextMenu.node.data?.category) {
+        console.error('节点类别未定义:', contextMenu.node);
+        ElMessage.error('无法编辑: 节点类别未定义');
+        closeContextMenu();
+        return;
+    }
+
+    // 确保节点被选中
+    selectedNode.value = contextMenu.node;
+
+    // 如果在全屏模式下，聚焦到右侧的属性面板
+    if (flowEditorVisible.value) {
+        // 滚动属性面板到顶部
+        const propertyPanel = document.querySelector('.node-property-panel');
+        if (propertyPanel) {
+            propertyPanel.scrollTop = 0;
+
+            // 添加一个高亮效果，提示用户属性面板已更新
+            propertyPanel.classList.add('panel-highlight');
+            setTimeout(() => {
+                propertyPanel.classList.remove('panel-highlight');
+            }, 1000);
+        }
+    } else {
+        // 如果不在全屏模式，可以显示一个提示
+        ElMessage({
+            message: `正在编辑节点: ${contextMenu.node.label || contextMenu.node.id}`,
+            type: 'info',
+            duration: 2000,
+        });
+    }
+
+    // 最后关闭右键菜单，确保操作完成后再清理
+    closeContextMenu();
 };
 
 // 新增节点方法
@@ -203,6 +406,190 @@ const removeNode = () => {
         .catch(() => {
             ElMessage.info('已取消删除');
         });
+};
+
+// 从右键菜单删除节点
+const removeContextMenuNode = () => {
+    if (!contextMenu.node) return;
+
+    // 获取要删除的节点
+    const nodeToRemove = contextMenu.node;
+
+    // 关闭右键菜单
+    closeContextMenu();
+
+    // 显示确认对话框
+    ElMessageBox.confirm(`确定要删除节点 "${nodeToRemove.label}" 吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+    })
+        .then(() => {
+            // 过滤掉要删除的节点
+            nodes.value = nodes.value.filter((node) => node.id !== nodeToRemove.id);
+
+            // 移除与该节点相关的连线
+            edges.value = edges.value.filter(
+                (edge) => edge.source !== nodeToRemove.id && edge.target !== nodeToRemove.id,
+            );
+
+            // 如果当前选中的节点是被删除的节点，清除选中状态
+            if (selectedNode.value && selectedNode.value.id === nodeToRemove.id) {
+                selectedNode.value = null;
+            }
+
+            // 刷新流程图
+            refreshFlowChart();
+
+            // 显示成功消息
+            ElMessage.success('节点已成功删除');
+        })
+        .catch(() => {
+            ElMessage.info('已取消删除');
+        });
+};
+
+// 复制节点
+const duplicateNode = () => {
+    if (!contextMenu.node) return;
+
+    // 获取要复制的节点
+    const nodeToDuplicate = contextMenu.node;
+
+    // 关闭右键菜单
+    closeContextMenu();
+
+    // 创建新节点，复制原节点的属性
+    const newNode = {
+        id: `node_${Date.now()}`, // 生成唯一ID
+        type: nodeToDuplicate.type,
+        label: `${nodeToDuplicate.label} (复制)`,
+        position: {
+            x: nodeToDuplicate.position.x + 50, // 稍微偏移一点，以便看到新节点
+            y: nodeToDuplicate.position.y + 50,
+        },
+        data: {
+            ...nodeToDuplicate.data,
+            // 可以在这里修改或添加其他属性
+        },
+    };
+
+    // 添加新节点到节点列表
+    nodes.value.push(newNode);
+
+    // 刷新流程图
+    refreshFlowChart();
+
+    // 选中新节点
+    selectedNode.value = newNode;
+
+    // 显示成功消息
+    ElMessage.success('节点已成功复制');
+};
+
+// 启动连接模式
+const startConnectingNodes = (node) => {
+    // 验证节点数据
+    if (!node || typeof node !== 'object') {
+        console.error('无效的节点参数:', node);
+        ElMessage.error('无法启动连接模式: 节点参数无效');
+        return;
+    }
+
+    if (!node.id || typeof node.id !== 'string') {
+        console.error('节点ID无效:', node.id);
+        ElMessage.error('无法启动连接模式: 节点ID无效');
+        return;
+    }
+
+    if (!node.data?.category) {
+        console.error('节点类别未定义:', node);
+        ElMessage.error('无法启动连接模式: 节点类别未定义');
+        return;
+    }
+
+    // 设置源节点
+    connectingMode.sourceNode = node;
+    connectingMode.active = true;
+
+    // 关闭右键菜单
+    closeContextMenu();
+
+    // 显示提示
+    ElMessage({
+        message: `正在从节点 "${node.label || node.id}" 创建连接，请点击目标节点`,
+        type: 'info',
+        duration: 3000,
+    });
+
+    console.log('连接模式已激活，源节点:', {
+        id: node.id,
+        label: node.label,
+        category: node.data.category,
+        position: node.position,
+    });
+};
+
+// 取消连接模式
+const cancelConnectingMode = () => {
+    console.log('退出连接模式');
+    connectingMode.active = false;
+    connectingMode.sourceNode = null;
+};
+
+// 在连接模式下创建连接
+const createConnection = (targetNode) => {
+    if (!targetNode || !targetNode.id) {
+        console.error('无效的目标节点参数:', targetNode);
+        cancelConnectingMode();
+        return;
+    }
+
+    console.log('尝试创建连接，目标节点:', targetNode.id);
+
+    if (
+        !connectingMode.sourceNode ||
+        !connectingMode.sourceNode.id ||
+        connectingMode.sourceNode.id === targetNode.id
+    ) {
+        console.log('无法创建连接：源节点无效或与目标节点相同');
+        cancelConnectingMode();
+        return;
+    }
+
+    // 检查是否已存在相同的连接
+    const connectionExists = edges.value.some(
+        (edge) => edge.source === connectingMode.sourceNode.id && edge.target === targetNode.id,
+    );
+
+    if (connectionExists) {
+        console.log('连接已存在，无法创建重复连接');
+        ElMessage.warning('连接已存在');
+    } else {
+        // 创建新连接
+        const newEdge = {
+            id: `edge_${Date.now()}`,
+            source: connectingMode.sourceNode.id,
+            target: targetNode.id,
+            type: 'default',
+            animated: false,
+            label: '',
+            style: { stroke: '#409EFF' }, // 使用主题蓝色
+        };
+
+        console.log('创建新连接:', newEdge);
+
+        // 添加新连接
+        edges.value.push(newEdge);
+
+        // 刷新流程图
+        refreshFlowChart();
+
+        ElMessage.success('连接已创建');
+    }
+
+    // 退出连接模式
+    cancelConnectingMode();
 };
 
 // 自动连接规则
@@ -323,10 +710,13 @@ const CustomNode = defineComponent({
     props: ['node'],
     setup(props) {
         // 获取外部的 selectedNode 和 removeNode
-        return { selectedNode, removeNode };
+        return { selectedNode, removeNode, onNodeContextMenu };
     },
     template: `
-        <div class="custom-node" :class="'node-' + node.data.category">
+        <div 
+            class="custom-node" 
+            :class="'node-' + node.data.category"
+        >
             <div class="node-header">
                 {{ node.label }}
                 <el-button
@@ -499,8 +889,10 @@ const components = {
                     :edge-types="edgeTypes"
                     style="width: 100%; height: 100%"
                     @node-click="onNodeClick"
+                    @node-context-menu="onNodeContextMenu"
                     @node-drag-stop="onNodeDragStop"
                     @connect="onConnect"
+                    @pane-click="closeContextMenu"
                 >
                     <template #node-custom="{ node }">
                         <component :is="components.customNode" :node="node" />
@@ -648,8 +1040,10 @@ const components = {
                     :edge-types="{ default: { component: CustomEdge } }"
                     style="width: 100%; height: 100vh; overflow: auto"
                     @node-click="onNodeClick"
+                    @node-context-menu="onNodeContextMenu"
                     @node-drag-stop="onNodeDragStop"
                     @connect="onConnect"
+                    @pane-click="closeContextMenu"
                 >
                     <template #node-custom="{ node }">
                         <component :is="components.customNode" :node="node" />
@@ -689,6 +1083,43 @@ const components = {
             </div>
         </div>
     </el-dialog>
+    <!-- 节点右键菜单 -->
+    <teleport to="body">
+        <div
+            v-if="contextMenu.visible"
+            class="node-context-menu"
+            :style="{
+                left: `${contextMenu.x}px`,
+                top: `${contextMenu.y}px`,
+            }"
+            @click.stop
+        >
+            <ul>
+                <li @click.stop="handleMenuItemClick('edit', $event)">
+                    <el-icon><Edit /></el-icon> 编辑节点
+                </li>
+                <li @click.stop="handleMenuItemClick('duplicate', $event)">
+                    <el-icon><CopyDocument /></el-icon> 复制节点
+                </li>
+                <li @click.stop="handleMenuItemClick('connect', $event)">
+                    <el-icon><Connection /></el-icon> 连接节点
+                </li>
+                <li @click.stop="handleMenuItemClick('remove', $event)">
+                    <el-icon><Delete /></el-icon> 删除节点
+                </li>
+            </ul>
+        </div>
+
+        <!-- 连接模式提示 -->
+        <div v-if="connectingMode.active" class="connecting-mode-indicator">
+            <el-alert title="连接模式已激活" type="info" :closable="false" show-icon>
+                <template #default>
+                    从 <strong>{{ connectingMode.sourceNode?.label }}</strong> 连接到...
+                    <el-button size="small" @click="cancelConnectingMode">取消</el-button>
+                </template>
+            </el-alert>
+        </div>
+    </teleport>
 </template>
 
 <style>
@@ -933,5 +1364,66 @@ const components = {
 :deep(.floow_card_body) {
     width: 100% !important;
     height: 490px !important;
+}
+
+/* 节点右键菜单样式 */
+.node-context-menu {
+    position: fixed;
+    z-index: 10000;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    min-width: 150px;
+
+    ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #606266;
+
+            &:hover {
+                background-color: #f5f7fa;
+                color: #409eff;
+            }
+
+            .el-icon {
+                font-size: 16px;
+            }
+        }
+    }
+}
+
+/* 属性面板高亮效果 */
+.panel-highlight {
+    animation: highlight-pulse 1s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(64, 158, 255, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(64, 158, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(64, 158, 255, 0);
+    }
+}
+
+/* 连接模式提示样式 */
+.connecting-mode-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    width: 400px;
 }
 </style>

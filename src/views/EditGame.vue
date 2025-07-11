@@ -173,17 +173,36 @@ const addNode = (type) => {
 const removeNode = () => {
     if (!selectedNode.value) return;
 
-    // 过滤掉被选中节点
-    nodes.value = nodes.value.filter((node) => node.id !== selectedNode.value.id);
+    // 获取要删除的节点ID
+    const nodeIdToRemove = selectedNode.value.id;
 
-    // 移除与该节点相关的连线
-    edges.value = edges.value.filter(
-        (edge) => edge.source !== selectedNode.value.id && edge.target !== selectedNode.value.id,
-    );
+    // 显示确认对话框
+    ElMessageBox.confirm(`确定要删除节点 "${selectedNode.value.label}" 吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+    })
+        .then(() => {
+            // 过滤掉被选中节点
+            nodes.value = nodes.value.filter((node) => node.id !== nodeIdToRemove);
 
-    // 清除选中状态
-    selectedNode.value = null;
-    refreshFlowChart();
+            // 移除与该节点相关的连线
+            edges.value = edges.value.filter(
+                (edge) => edge.source !== nodeIdToRemove && edge.target !== nodeIdToRemove,
+            );
+
+            // 清除选中状态
+            selectedNode.value = null;
+
+            // 刷新流程图
+            refreshFlowChart();
+
+            // 显示成功消息
+            ElMessage.success('节点已成功删除');
+        })
+        .catch(() => {
+            ElMessage.info('已取消删除');
+        });
 };
 
 // 自动连接规则
@@ -251,6 +270,17 @@ const refreshFlowChart = () => {
 // 打开流程图编辑器
 const openFlowEditor = () => {
     flowEditorVisible.value = true;
+    // 确保DOM更新后再刷新流程图
+    setTimeout(() => {
+        refreshFlowChart();
+        // 如果有选中的节点，确保在全屏模式下仍然保持选中状态
+        if (selectedNode.value) {
+            const node = nodes.value.find((n) => n.id === selectedNode.value.id);
+            if (node) {
+                selectedNode.value = node;
+            }
+        }
+    }, 100);
 };
 
 // 关闭流程图编辑器
@@ -296,7 +326,7 @@ const CustomNode = defineComponent({
         return { selectedNode, removeNode };
     },
     template: `
-        <div class="custom-node">
+        <div class="custom-node" :class="'node-' + node.data.category">
             <div class="node-header">
                 {{ node.label }}
                 <el-button
@@ -306,10 +336,39 @@ const CustomNode = defineComponent({
                     size="small"
                     @click.stop="removeNode"
                     style="float: right; margin-top: -5px"
+                    title="删除节点"
                 />
             </div>
             <div class="node-content">
                 <p v-if="node.data.category">类型: {{ node.data.category }}</p>
+                
+                <!-- 事件节点特定内容 -->
+                <template v-if="node.data.category === 'event' && node.data.title">
+                    <p>标题: {{ node.data.title }}</p>
+                    <p v-if="node.data.content" class="truncate-text">描述: {{ node.data.content }}</p>
+                </template>
+                
+                <!-- 选择节点特定内容 -->
+                <template v-if="node.data.category === 'choice' && node.data.options">
+                    <p>选项数量: {{ node.data.options.length }}</p>
+                    <p v-if="node.data.options.length > 0" class="truncate-text">
+                        首选项: {{ node.data.options[0].text }}
+                    </p>
+                </template>
+                
+                <!-- 奖励节点特定内容 -->
+                <template v-if="node.data.category === 'reward'">
+                    <p>奖励类型: {{ node.data.rewardType }}</p>
+                    <p v-if="node.data.description" class="truncate-text">
+                        描述: {{ node.data.description }}
+                    </p>
+                </template>
+                
+                <!-- 条件节点特定内容 -->
+                <template v-if="node.data.category === 'condition'">
+                    <p class="truncate-text">条件: {{ node.data.condition || '未设置' }}</p>
+                    <p class="truncate-text">描述: {{ node.data.description }}</p>
+                </template>
             </div>
         </div>
     `,
@@ -417,9 +476,17 @@ const components = {
             <template #header>
                 <div class="card-header">
                     <span>可视化流程图</span>
-                    <el-button type="primary" icon="Edit" @click="openFlowEditor"
-                        >全屏编辑</el-button
-                    >
+                    <div>
+                        <el-tooltip
+                            content="点击节点可以选中并编辑属性，选中节点后可以删除"
+                            placement="top"
+                        >
+                            <el-button icon="QuestionFilled" circle></el-button>
+                        </el-tooltip>
+                        <el-button type="primary" icon="Edit" @click="openFlowEditor"
+                            >全屏编辑</el-button
+                        >
+                    </div>
                 </div>
             </template>
 
@@ -448,11 +515,40 @@ const components = {
             <!-- 节点操作面板 -->
             <div class="flow-control-panel">
                 <h4>节点操作</h4>
-                <el-button-group>
-                    <el-button size="small" @click="addNode('character')">添加角色节点</el-button>
-                    <el-button size="small" @click="addNode('event')">添加事件节点</el-button>
-                    <el-button size="small" @click="addNode('location')">添加场地节点</el-button>
-                    <el-button size="small" @click="addNode('skill')">添加技能节点</el-button>
+                <el-button-group class="node-button-group">
+                    <el-button size="small" icon="User" @click="addNode('character')"
+                        >添加角色节点</el-button
+                    >
+                    <el-button size="small" icon="Bell" @click="addNode('event')"
+                        >添加事件节点</el-button
+                    >
+                    <el-button size="small" icon="Location" @click="addNode('location')"
+                        >添加场地节点</el-button
+                    >
+                    <el-button size="small" icon="Star" @click="addNode('skill')"
+                        >添加技能节点</el-button
+                    >
+                </el-button-group>
+
+                <h4 style="margin-top: 10px">高级节点</h4>
+                <el-button-group class="node-button-group">
+                    <el-button
+                        size="small"
+                        type="success"
+                        icon="SwitchButton"
+                        @click="addNode('choice')"
+                        >添加选择节点</el-button
+                    >
+                    <el-button size="small" type="success" icon="Present" @click="addNode('reward')"
+                        >添加奖励节点</el-button
+                    >
+                    <el-button
+                        size="small"
+                        type="success"
+                        icon="Connection"
+                        @click="addNode('condition')"
+                        >添加条件节点</el-button
+                    >
                 </el-button-group>
 
                 <div v-if="selectedNode" style="margin-top: 15px">
@@ -485,24 +581,112 @@ const components = {
         </div>
 
         <div class="flow-editor-content">
-            <VueFlow
-                v-model:nodes="nodes"
-                v-model:edges="edges"
-                :node-types="{ custom: { component: CustomNode } }"
-                :edge-types="{ default: { component: CustomEdge } }"
-                style="width: 100%; height: 100vh; overflow: auto"
-                @node-click="onNodeClick"
-                @node-drag-stop="onNodeDragStop"
-                @connect="onConnect"
-            >
-                <template #node-custom="{ node }">
-                    <component :is="components.customNode" :node="node" />
-                </template>
+            <div class="flow-editor-sidebar">
+                <!-- 全屏模式下的节点操作面板 -->
+                <div class="fullscreen-control-panel">
+                    <h3>添加节点</h3>
+                    <div class="node-buttons">
+                        <h4>基本节点</h4>
+                        <el-button-group class="node-button-group">
+                            <el-button size="default" icon="User" @click="addNode('character')"
+                                >角色节点</el-button
+                            >
+                            <el-button size="default" icon="Bell" @click="addNode('event')"
+                                >事件节点</el-button
+                            >
+                            <el-button size="default" icon="Location" @click="addNode('location')"
+                                >场地节点</el-button
+                            >
+                            <el-button size="default" icon="Star" @click="addNode('skill')"
+                                >技能节点</el-button
+                            >
+                        </el-button-group>
 
-                <template #edge-default="{ edge }">
-                    <component :is="components.customEdge" :edge="edge" />
-                </template>
-            </VueFlow>
+                        <h4 style="margin-top: 15px">高级节点</h4>
+                        <el-button-group class="node-button-group">
+                            <el-button
+                                size="default"
+                                type="success"
+                                icon="SwitchButton"
+                                @click="addNode('choice')"
+                                >选择节点</el-button
+                            >
+                            <el-button
+                                size="default"
+                                type="success"
+                                icon="Present"
+                                @click="addNode('reward')"
+                                >奖励节点</el-button
+                            >
+                            <el-button
+                                size="default"
+                                type="success"
+                                icon="Connection"
+                                @click="addNode('condition')"
+                                >条件节点</el-button
+                            >
+                        </el-button-group>
+                    </div>
+
+                    <div v-if="selectedNode" style="margin-top: 20px">
+                        <h3>当前选中节点</h3>
+                        <p><strong>ID:</strong> {{ selectedNode.id }}</p>
+                        <p><strong>类型:</strong> {{ selectedNode.data.category }}</p>
+                        <p>
+                            <strong>位置:</strong> ({{ Math.round(selectedNode.position.x) }},
+                            {{ Math.round(selectedNode.position.y) }})
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-editor-main">
+                <VueFlow
+                    v-model:nodes="nodes"
+                    v-model:edges="edges"
+                    :node-types="{ custom: { component: CustomNode } }"
+                    :edge-types="{ default: { component: CustomEdge } }"
+                    style="width: 100%; height: 100vh; overflow: auto"
+                    @node-click="onNodeClick"
+                    @node-drag-stop="onNodeDragStop"
+                    @connect="onConnect"
+                >
+                    <template #node-custom="{ node }">
+                        <component :is="components.customNode" :node="node" />
+                    </template>
+
+                    <template #edge-default="{ edge }">
+                        <component :is="components.customEdge" :edge="edge" />
+                    </template>
+                </VueFlow>
+            </div>
+
+            <!-- 节点属性编辑面板 -->
+            <div v-if="selectedNode" class="node-property-panel">
+                <h3>节点属性编辑</h3>
+                <NodePropertyEditor
+                    :node="selectedNode"
+                    @update:node="
+                        (updatedNode) => {
+                            // 更新节点数据
+                            const index = nodes.value.findIndex((n) => n.id === updatedNode.id);
+                            if (index !== -1) {
+                                // 使用解构赋值确保响应式更新
+                                nodes.value[index] = { ...nodes.value[index], ...updatedNode };
+
+                                // 更新选中的节点，确保属性面板显示最新的节点属性
+                                selectedNode.value = nodes.value[index];
+
+                                // 刷新流程图
+                                refreshFlowChart();
+
+                                // 显示成功消息
+                                ElMessage.success('节点属性已更新');
+                            }
+                        }
+                    "
+                />
+            </div>
         </div>
     </el-dialog>
 </template>
@@ -513,6 +697,16 @@ const components = {
 
 /* this contains the default theme, these are optional styles */
 @import '@vue-flow/core/dist/theme-default.css';
+
+/* 自定义流程图画布样式 */
+:deep(.vue-flow__container) {
+    background-color: #f0f2f5; /* 浅灰色背景 */
+}
+
+:deep(.vue-flow__pane) {
+    background-image: radial-gradient(#e4e7ed 1px, transparent 1px);
+    background-size: 20px 20px; /* 网格大小 */
+}
 </style>
 
 <style lang="less" scoped>
@@ -575,9 +769,27 @@ const components = {
 .flow-control-panel {
     margin-top: 20px;
     padding: 15px;
-    background-color: #f9fafb;
+    background-color: #f0f2f5;
     border-radius: 4px;
-    border: 1px solid #e4e7ed;
+    border: 1px solid #d4d7de;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #303133;
+        font-weight: 600;
+    }
+
+    .node-button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .el-button {
+            margin-right: 0;
+        }
+    }
 }
 
 :deep(.vue-flow__node) {
@@ -605,6 +817,13 @@ const components = {
     padding: 8px 12px;
     font-size: 12px;
     color: #666;
+
+    .truncate-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 160px;
+    }
 }
 
 :deep(.vue-flow__edge) {
@@ -641,6 +860,59 @@ const components = {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    display: flex;
+}
+
+.flow-editor-sidebar {
+    width: 220px;
+    height: 100%;
+    background-color: #f5f7fa;
+    border-right: 1px solid #e4e7ed;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.fullscreen-control-panel {
+    h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #303133;
+    }
+
+    h4 {
+        margin-bottom: 10px;
+        color: #606266;
+    }
+
+    .node-button-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+
+        .el-button {
+            margin-bottom: 8px;
+            justify-content: flex-start;
+        }
+    }
+}
+
+.flow-editor-main {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+.node-property-panel {
+    width: 300px;
+    height: 100%;
+    background-color: #f5f7fa;
+    border-left: 1px solid #e4e7ed;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.node-buttons {
+    margin-bottom: 20px;
 }
 
 :deep(.vue-flow__container) {

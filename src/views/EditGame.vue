@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, markRaw } from 'vue';
+import { ref, markRaw, computed } from 'vue';
 import { VueFlow, useNodes, useEdges } from '@vue-flow/core';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import request from '../utils/request';
+import NodePropertyEditor from '../components/NodePropertyEditor.vue';
 
 // 定义游戏编辑入口数据结构
 interface GameEditorEntry {
@@ -74,7 +75,12 @@ const nodeTemplates = markRaw({
         id: '',
         label: '新事件节点',
         position: { x: 0, y: 0 },
-        data: { category: 'event' },
+        data: {
+            category: 'event',
+            title: '新事件',
+            content: '事件描述内容',
+            backgroundImage: '',
+        },
     },
     location: {
         id: '',
@@ -88,6 +94,47 @@ const nodeTemplates = markRaw({
         label: '新技能节点',
         position: { x: 0, y: 0 },
         data: { category: 'skill' },
+    },
+    // 新增节点类型
+    choice: {
+        id: '',
+        label: '新选择节点',
+        position: { x: 0, y: 0 },
+        data: {
+            category: 'choice',
+            options: [
+                {
+                    id: `option-${Date.now()}`,
+                    text: '默认选项',
+                    condition: '',
+                    nextNodeId: '',
+                    consequences: {},
+                },
+            ],
+        },
+    },
+    reward: {
+        id: '',
+        label: '新奖励节点',
+        position: { x: 0, y: 0 },
+        data: {
+            category: 'reward',
+            rewardType: 'item',
+            amount: 1,
+            description: '获得奖励',
+        },
+    },
+    condition: {
+        id: '',
+        label: '新条件节点',
+        position: { x: 0, y: 0 },
+        data: {
+            category: 'condition',
+            condition: '',
+            trueNodeId: '',
+            falseNodeId: '',
+            description: '条件判断',
+        },
     },
 });
 
@@ -141,10 +188,13 @@ const removeNode = () => {
 
 // 自动连接规则
 const autoConnectRules = {
-    character: ['event', 'location'],
-    event: ['event', 'skill'],
-    location: ['event', 'skill'],
+    character: ['event', 'location', 'condition'],
+    event: ['event', 'skill', 'choice', 'reward', 'condition'],
+    location: ['event', 'skill', 'condition'],
     skill: [],
+    choice: ['event', 'reward', 'condition'],
+    reward: ['event', 'choice', 'condition'],
+    condition: ['event', 'choice', 'reward'],
 };
 
 // 节点拖拽结束事件

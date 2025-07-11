@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, markRaw } from 'vue';
 import { VueFlow, useNodes, useEdges } from '@vue-flow/core';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import request from '../utils/request';
@@ -24,38 +24,169 @@ const currentGame = ref({
     },
 });
 
-// 流程图数据
+// 初始化流程图数据
 const nodes = ref([
     {
         id: 'character-editor',
         type: 'input',
         label: '角色编辑',
         position: { x: 250, y: 5 },
+        data: { category: 'character' },
     },
     {
         id: 'event-editor',
         label: '事件编辑',
         position: { x: 100, y: 100 },
+        data: { category: 'event' },
     },
     {
         id: 'location-editor',
         label: '场地编辑',
         position: { x: 400, y: 100 },
+        data: { category: 'location' },
     },
     {
         id: 'skill-editor',
         type: 'output',
         label: '技能编辑',
         position: { x: 250, y: 200 },
+        data: { category: 'skill' },
     },
 ]);
 
 const edges = ref([
-    { id: 'e1-2', source: 'character-editor', target: 'event-editor' },
-    { id: 'e1-3', source: 'character-editor', target: 'location-editor' },
-    { id: 'e2-4', source: 'event-editor', target: 'skill-editor' },
-    { id: 'e3-4', source: 'location-editor', target: 'skill-editor' },
+    { id: 'e1-2', source: 'character-editor', target: 'event-editor', type: 'default' },
+    { id: 'e1-3', source: 'character-editor', target: 'location-editor', type: 'default' },
+    { id: 'e2-4', source: 'event-editor', target: 'skill-editor', type: 'default' },
+    { id: 'e3-4', source: 'location-editor', target: 'skill-editor', type: 'default' },
 ]);
+
+// 新增节点模板
+const nodeTemplates = markRaw({
+    character: {
+        id: '',
+        type: 'input',
+        label: '新角色节点',
+        position: { x: 0, y: 0 },
+        data: { category: 'character' },
+    },
+    event: {
+        id: '',
+        label: '新事件节点',
+        position: { x: 0, y: 0 },
+        data: { category: 'event' },
+    },
+    location: {
+        id: '',
+        label: '新场地节点',
+        position: { x: 0, y: 0 },
+        data: { category: 'location' },
+    },
+    skill: {
+        id: '',
+        type: 'output',
+        label: '新技能节点',
+        position: { x: 0, y: 0 },
+        data: { category: 'skill' },
+    },
+});
+
+// 当前选中的节点
+const selectedNode = ref(null);
+
+// 节点点击事件
+const onNodeClick = (event, node) => {
+    selectedNode.value = node;
+};
+
+// 新增节点方法
+const addNode = (type) => {
+    const template = nodeTemplates[type];
+    if (!template) return;
+
+    // 计算新节点ID
+    const nodeId = `${type}-editor-${nodes.value.length + 1}`;
+
+    // 创建新节点
+    const newNode = {
+        ...template,
+        id: nodeId,
+        position: {
+            x: Math.random() * 300 + 100,
+            y: Math.random() * 300 + 300,
+        },
+    };
+
+    // 添加新节点
+    nodes.value.push(newNode);
+    refreshFlowChart();
+};
+
+// 删除节点方法
+const removeNode = () => {
+    if (!selectedNode.value) return;
+
+    // 过滤掉被选中节点
+    nodes.value = nodes.value.filter((node) => node.id !== selectedNode.value.id);
+
+    // 移除与该节点相关的连线
+    edges.value = edges.value.filter(
+        (edge) => edge.source !== selectedNode.value.id && edge.target !== selectedNode.value.id,
+    );
+
+    // 清除选中状态
+    selectedNode.value = null;
+    refreshFlowChart();
+};
+
+// 自动连接规则
+const autoConnectRules = {
+    character: ['event', 'location'],
+    event: ['event', 'skill'],
+    location: ['event', 'skill'],
+    skill: [],
+};
+
+// 节点拖拽结束事件
+const onNodeDragStop = (event, node) => {
+    // 检查是否需要自动创建连接线
+    // 确保 node.data 和 node.data.category 存在，并且 autoConnectRules 中有对应的规则
+    const category = node?.data?.category;
+    const rules = category ? autoConnectRules[category] : [];
+
+    const targetNodes = nodes.value.filter(
+        (n) => n?.id !== node?.id && n?.data?.category && rules?.includes(n.data.category),
+    );
+
+    // 如果有可连接的节点，则创建连接线
+    if (targetNodes.length > 0) {
+        const newEdge = {
+            id: `e${node.id}-${targetNodes[0].id}`,
+            source: node.id,
+            target: targetNodes[0].id,
+            type: 'default',
+        };
+
+        edges.value.push(newEdge);
+        refreshFlowChart();
+    }
+};
+
+// 手动连接节点时的事件处理
+const onConnect = (params) => {
+    // 确保新创建的边有 type 属性
+    const newEdge = {
+        ...params,
+        id: `e${params.source}-${params.target}`,
+        type: 'default',
+    };
+
+    edges.value.push(newEdge);
+    refreshFlowChart();
+
+    // 阻止默认的边创建行为，因为我们已经手动添加了边
+    return false;
+};
 
 // 全屏流程图编辑器可见性
 const flowEditorVisible = ref(false);
@@ -100,6 +231,65 @@ const resetFlowData = () => {
         .catch(() => {
             ElMessage.info('操作已取消');
         });
+};
+
+import { defineComponent } from 'vue';
+import { ElButton } from 'element-plus';
+
+// 自定义节点组件
+const CustomNode = defineComponent({
+    name: 'CustomNode',
+    components: { ElButton },
+    props: ['node'],
+    setup(props) {
+        // 获取外部的 selectedNode 和 removeNode
+        return { selectedNode, removeNode };
+    },
+    template: `
+        <div class="custom-node">
+            <div class="node-header">
+                {{ node.label }}
+                <el-button
+                    v-if="selectedNode && selectedNode.id === node.id"
+                    icon="Delete"
+                    circle
+                    size="small"
+                    @click.stop="removeNode"
+                    style="float: right; margin-top: -5px"
+                />
+            </div>
+            <div class="node-content">
+                <p v-if="node.data.category">类型: {{ node.data.category }}</p>
+            </div>
+        </div>
+    `,
+});
+
+// 自定义边组件
+const CustomEdge = defineComponent({
+    name: 'CustomEdge',
+    props: ['edge'],
+    template: `
+        <div class="custom-edge">
+            <span class="edge-label">{{ edge?.label || '' }}</span>
+        </div>
+    `,
+});
+
+// 自定义节点类型
+const nodeTypes = markRaw({
+    custom: { component: CustomNode },
+});
+
+// 自定义边类型
+const edgeTypes = markRaw({
+    default: { component: CustomEdge },
+});
+
+// 注册自定义组件
+const components = {
+    customNode: CustomNode,
+    customEdge: CustomEdge,
 };
 </script>
 
@@ -188,8 +378,42 @@ const resetFlowData = () => {
                     class="floow_card_body"
                     :nodes="nodes"
                     :edges="edges"
+                    :node-types="{ custom: { component: CustomNode } }"
+                    :edge-types="edgeTypes"
                     style="width: 100%; height: 100%"
-                />
+                    @node-click="onNodeClick"
+                    @node-drag-stop="onNodeDragStop"
+                    @connect="onConnect"
+                >
+                    <template #node-custom="{ node }">
+                        <component :is="components.customNode" :node="node" />
+                    </template>
+
+                    <template #edge-default="{ edge }">
+                        <component :is="components.customEdge" :edge="edge" />
+                    </template>
+                </VueFlow>
+            </div>
+
+            <!-- 节点操作面板 -->
+            <div class="flow-control-panel">
+                <h4>节点操作</h4>
+                <el-button-group>
+                    <el-button size="small" @click="addNode('character')">添加角色节点</el-button>
+                    <el-button size="small" @click="addNode('event')">添加事件节点</el-button>
+                    <el-button size="small" @click="addNode('location')">添加场地节点</el-button>
+                    <el-button size="small" @click="addNode('skill')">添加技能节点</el-button>
+                </el-button-group>
+
+                <div v-if="selectedNode" style="margin-top: 15px">
+                    <h4>当前选中节点</h4>
+                    <p>ID: {{ selectedNode.id }}</p>
+                    <p>类型: {{ selectedNode.data.category }}</p>
+                    <p>
+                        位置: ({{ Math.round(selectedNode.position.x) }},
+                        {{ Math.round(selectedNode.position.y) }})
+                    </p>
+                </div>
             </div>
         </el-card>
     </el-card>
@@ -214,8 +438,21 @@ const resetFlowData = () => {
             <VueFlow
                 v-model:nodes="nodes"
                 v-model:edges="edges"
+                :node-types="{ custom: { component: CustomNode } }"
+                :edge-types="{ default: { component: CustomEdge } }"
                 style="width: 100%; height: 100vh; overflow: auto"
-            />
+                @node-click="onNodeClick"
+                @node-drag-stop="onNodeDragStop"
+                @connect="onConnect"
+            >
+                <template #node-custom="{ node }">
+                    <component :is="components.customNode" :node="node" />
+                </template>
+
+                <template #edge-default="{ edge }">
+                    <component :is="components.customEdge" :edge="edge" />
+                </template>
+            </VueFlow>
         </div>
     </el-dialog>
 </template>
@@ -285,8 +522,39 @@ const resetFlowData = () => {
     }
 }
 
+.flow-control-panel {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f9fafb;
+    border-radius: 4px;
+    border: 1px solid #e4e7ed;
+}
+
 :deep(.vue-flow__node) {
     display: block !important;
+    min-width: 180px;
+    background: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.node-header {
+    padding: 8px 12px;
+    background-color: #f5f7fa;
+    border-bottom: 1px solid #e4e7ed;
+    font-weight: 600;
+}
+
+.node-content {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #666;
 }
 
 :deep(.vue-flow__edge) {

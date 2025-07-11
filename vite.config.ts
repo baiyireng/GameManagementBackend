@@ -36,6 +36,7 @@ export default defineConfig(({ mode, command }: ConfigEnv) => {
             alias: {
                 '@': '/src', // 配置别名
                 '@/utils': '/src/utils',
+                'vue': 'vue/dist/vue.esm-bundler.js', // 支持运行时编译
             },
         },
         server: {

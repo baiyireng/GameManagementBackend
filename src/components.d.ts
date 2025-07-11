@@ -43,6 +43,7 @@ declare module 'vue' {
     ImageUploader: typeof import('./components/ImageUploader.vue')['default']
     MainLayout: typeof import('./components/layout/MainLayout.vue')['default']
     NodePropertyEditor: typeof import('./components/NodePropertyEditor.vue')['default']
+    NodePropertyModal: typeof import('./components/NodePropertyModal.vue')['default']
     PropertyEditor: typeof import('./components/PropertyEditor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, markRaw, computed, reactive, onMounted, onUnmounted } from 'vue';
 import { VueFlow, useNodes, useEdges } from '@vue-flow/core';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage, ElMessageBox, ElTooltip } from 'element-plus';
+import NodePropertyModal from '@/components/NodePropertyModal.vue';
 import { Edit, Delete, CopyDocument, Connection } from '@element-plus/icons-vue';
 import request from '../utils/request';
 import NodePropertyEditor from '../components/NodePropertyEditor.vue';

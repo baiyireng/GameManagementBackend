@@ -321,8 +321,8 @@ const editNode = () => {
         return;
     }
 
-    // 确保节点被选中
-    selectedNode.value = contextMenu.node;
+    // 创建节点数据的深拷贝，避免在编辑过程中直接修改原始数据
+    selectedNode.value = JSON.parse(JSON.stringify(contextMenu.node));
 
     // 如果在全屏模式下，聚焦到右侧的属性面板
     if (flowEditorVisible.value) {
@@ -338,12 +338,8 @@ const editNode = () => {
             }, 1000);
         }
     } else {
-        // 如果不在全屏模式，可以显示一个提示
-        ElMessage({
-            message: `正在编辑节点: ${contextMenu.node.label || contextMenu.node.id}`,
-            type: 'info',
-            duration: 2000,
-        });
+        // 如果不在全屏模式，打开节点属性模态框
+        propertyModalVisible.value = true;
     }
 
     // 最后关闭右键菜单，确保操作完成后再清理
@@ -647,6 +643,8 @@ const onConnect = (params) => {
 
 // 全屏流程图编辑器可见性
 const flowEditorVisible = ref(false);
+// 节点属性模态框可见性
+const propertyModalVisible = ref(false);
 
 // 手动触发流程图重新渲染
 const refreshFlowChart = () => {
@@ -676,6 +674,35 @@ const closeFlowEditor = () => {
     flowEditorVisible.value = false;
     // 延迟执行以确保 DOM 更新完成
     setTimeout(refreshFlowChart, 300);
+};
+
+// 标记流程图为已修改状态
+const setModified = (value) => {
+    // 这里可以添加更多逻辑，比如显示保存提示、更新UI状态等
+    console.log('流程图已修改:', value);
+    // 如果需要，可以添加一个状态变量来跟踪修改状态
+    // isModified.value = value;
+};
+
+// 处理节点属性模态框保存
+const handlePropertySave = (updatedNode) => {
+    if (!updatedNode || !selectedNode.value) return;
+
+    // 更新节点数据
+    Object.assign(selectedNode.value, updatedNode);
+
+    // 更新图表中的节点
+    const node = nodes.value.find((n) => n.id === updatedNode.id);
+    if (node) {
+        // 更新节点属性
+        Object.assign(node, updatedNode);
+
+        // 刷新流程图
+        refreshFlowChart();
+
+        // 标记为已修改
+        setModified(true);
+    }
 };
 
 // 保存流程图数据
@@ -799,6 +826,14 @@ const components = {
             <div class="card-header">
                 <span>编辑游戏：{{ currentGame.name }}</span>
             </div>
+
+            <!-- 节点属性模态框 -->
+            <NodePropertyModal
+                v-model:visible="propertyModalVisible"
+                :node="selectedNode"
+                @save="handlePropertySave"
+                @close="selectedNode = null"
+            />
         </template>
 
         <el-row :gutter="20" class="editor-cards">
@@ -869,7 +904,7 @@ const components = {
                     <span>可视化流程图</span>
                     <div>
                         <el-tooltip
-                            content="点击节点可以选中并编辑属性，选中节点后可以删除"
+                            content="点击节点可以选中并编辑属性，在非全屏模式下会打开属性编辑对话框，在全屏模式下会在右侧显示属性面板"
                             placement="top"
                         >
                             <el-button icon="QuestionFilled" circle></el-button>

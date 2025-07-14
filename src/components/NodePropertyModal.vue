@@ -1,26 +1,17 @@
 <template>
-    <el-dialog v-model="visible" title="节点属性" width="50%" :before-close="handleClose">
-        <!-- 原有的节点属性编辑内容 -->
-        <div class="node-property-panel">
-            <el-form label-position="top">
-                <el-form-item label="节点ID">
-                    <el-input v-model="node.id" disabled />
-                </el-form-item>
-                <el-form-item label="节点名称">
-                    <el-input v-model="node.label" />
-                </el-form-item>
-                <el-form-item label="节点类型">
-                    <el-select v-model="node.data.category">
-                        <el-option
-                            v-for="category in nodeCategories"
-                            :key="category.value"
-                            :label="category.label"
-                            :value="category.value"
-                        />
-                    </el-select>
-                </el-form-item>
-                <!-- 其他属性字段 -->
-            </el-form>
+    <el-dialog
+        v-model="dialogVisible"
+        title="节点属性编辑"
+        width="60%"
+        :before-close="handleClose"
+        destroy-on-close
+    >
+        <div class="node-property-modal-content">
+            <NodePropertyEditor
+                v-if="currentNode"
+                :node="currentNode"
+                @update:node="handleNodeUpdate"
+            />
         </div>
 
         <template #footer>
@@ -30,51 +21,71 @@
     </el-dialog>
 </template>
 
-<script setup>
-import { ref, watch } from 'vue';
+<script setup lang="ts">
+import { ref, watch, computed } from 'vue';
+import { ElMessage } from 'element-plus';
+import NodePropertyEditor from './NodePropertyEditor.vue';
 
 const props = defineProps({
-    node: {
-        type: Object,
-        required: true,
-    },
     visible: {
         type: Boolean,
         default: false,
+    },
+    node: {
+        type: Object,
+        required: true,
     },
 });
 
 const emit = defineEmits(['update:visible', 'save']);
 
-const node = ref({ ...props.node });
-const nodeCategories = ref([
-    { value: 'start', label: '开始节点' },
-    { value: 'action', label: '动作节点' },
-    { value: 'condition', label: '条件节点' },
-    { value: 'end', label: '结束节点' },
-]);
+// 对话框可见性
+const dialogVisible = computed({
+    get: () => props.visible,
+    set: (value) => emit('update:visible', value),
+});
 
+// 当前编辑的节点（创建副本以避免直接修改原始数据）
+const currentNode = ref(props.node ? JSON.parse(JSON.stringify(props.node)) : null);
+
+// 监听外部节点变化
 watch(
     () => props.node,
-    (newVal) => {
-        node.value = { ...newVal };
+    (newNode) => {
+        if (newNode) {
+            currentNode.value = JSON.parse(JSON.stringify(newNode));
+        }
     },
+    { deep: true },
 );
 
-const handleClose = () => {
-    emit('update:visible', false);
+// 处理节点更新
+const handleNodeUpdate = (updatedNode) => {
+    currentNode.value = updatedNode;
 };
 
+// 关闭对话框
+const handleClose = () => {
+    dialogVisible.value = false;
+};
+
+// 保存节点
 const handleSave = () => {
-    emit('save', node.value);
+    if (!currentNode.value) {
+        ElMessage.warning('没有节点数据可保存');
+        return;
+    }
+
+    emit('save', currentNode.value);
     handleClose();
+    ElMessage.success('节点属性已保存');
 };
 </script>
 
 <style scoped>
-.node-property-panel {
-    max-height: 60vh;
+.node-property-modal-content {
+    max-height: 70vh;
     overflow-y: auto;
-    padding: 0 20px;
+    padding: 0 10px;
 }
 </style>

@@ -33,7 +33,8 @@ const props = defineProps({
     },
     node: {
         type: Object,
-        required: true,
+        required: false,
+        default: null,
     },
 });
 

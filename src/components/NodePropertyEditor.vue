@@ -350,7 +350,7 @@ const addCombatEnemy = () => {
 
     // 发出更新事件
     emit('update:node', updatedNode);
-    ElMessage.success('已添加新敌人');
+    ElMessage.success('已添加新战斗敌人');
 };
 
 // 删除战斗敌人
@@ -370,7 +370,7 @@ const removeCombatEnemy = (index) => {
 
         // 发出更新事件
         emit('update:node', updatedNode);
-        ElMessage.success('已删除敌人');
+        ElMessage.success('已删除战斗敌人');
     }
 };
 

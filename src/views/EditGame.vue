@@ -1098,20 +1098,29 @@ const components = {
                     :node="selectedNode"
                     @update:node="
                         (updatedNode) => {
-                            // 更新节点数据
-                            const index = nodes.value.findIndex((n) => n.id === updatedNode.id);
-                            if (index !== -1) {
-                                // 使用解构赋值确保响应式更新
-                                nodes.value[index] = { ...nodes.value[index], ...updatedNode };
+                            // 确保nodes.value存在且是数组
+                            if (nodes.value && Array.isArray(nodes.value)) {
+                                // 更新节点数据
+                                const index = nodes.value.findIndex((n) => n.id === updatedNode.id);
+                                if (index !== -1) {
+                                    // 使用解构赋值确保响应式更新
+                                    nodes.value[index] = { ...nodes.value[index], ...updatedNode };
 
-                                // 更新选中的节点，确保属性面板显示最新的节点属性
-                                selectedNode.value = nodes.value[index];
+                                    // 更新选中的节点，确保属性面板显示最新的节点属性
+                                    selectedNode.value = nodes.value[index];
 
-                                // 刷新流程图
-                                refreshFlowChart();
+                                    // 刷新流程图
+                                    refreshFlowChart();
 
-                                // 显示成功消息
-                                ElMessage.success('节点属性已更新');
+                                    // 显示成功消息
+                                    ElMessage.success('节点属性已更新');
+                                } else {
+                                    console.error('未找到要更新的节点:', updatedNode.id);
+                                    ElMessage.error('更新失败：未找到节点');
+                                }
+                            } else {
+                                console.error('nodes.value不是有效数组:', nodes.value);
+                                ElMessage.error('更新失败：节点列表无效');
                             }
                         }
                     "

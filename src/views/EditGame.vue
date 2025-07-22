@@ -7,6 +7,26 @@ import { Edit, Delete, CopyDocument, Connection } from '@element-plus/icons-vue'
 import request from '../utils/request';
 import NodePropertyEditor from '../components/NodePropertyEditor.vue';
 
+// 导入自定义组件
+import CustomNode from '@/components/flow/CustomNode.vue';
+import CustomEdge from '@/components/flow/CustomEdge.vue';
+import FlowContextMenu from '@/components/flow/FlowContextMenu.vue';
+import ConnectingModeIndicator from '@/components/flow/ConnectingModeIndicator.vue';
+
+// 导入工具函数
+import {
+    createNode,
+    createEdge,
+    canConnect,
+    getConnectionCompatibility,
+    duplicateNode as duplicateNodeUtil,
+    exportFlowToJson,
+    importFlowFromJson,
+    getDefaultNodeData,
+    getNodeTypeName,
+    getNodeTypeIcon,
+} from '@/utils/flowUtils';
+
 // 定义游戏编辑入口数据结构
 interface GameEditorEntry {
     character: string; // 角色编辑器路径
@@ -1039,212 +1059,6 @@ const resetFlowData = () => {
         });
 };
 
-import { defineComponent } from 'vue';
-import { ElButton } from 'element-plus';
-
-// 自定义节点组件
-const CustomNode = defineComponent({
-    name: 'CustomNode',
-    components: { ElButton },
-    props: [
-        'id',
-        'data',
-        'label',
-        'selected',
-        'type',
-        // 添加VueFlow可能传递的其他属性
-        'dragging',
-        'position',
-        'dimensions',
-        'zIndex',
-        'targetPosition',
-        'sourcePosition',
-        'isConnectable',
-        'selectable',
-        'dragHandle',
-        'events',
-        'connectable',
-        'resizing',
-    ],
-    setup(props) {
-        // 获取外部的 selectedNode 和 removeNode
-        const isSelected = computed(() => {
-            return selectedNode.value && selectedNode.value.id === props.id;
-        });
-
-        return { selectedNode, removeNode, onNodeContextMenu, isSelected };
-    },
-    template: `
-        <div 
-            class="custom-node" 
-            :class="['node-' + data.category, { selected: isSelected }]"
-        >
-            <div class="node-header">
-                {{ label }}
-                <el-button
-                    v-if="isSelected"
-                    icon="Delete"
-                    circle
-                    size="small"
-                    @click.stop="removeNode"
-                    style="float: right; margin-top: -5px"
-                    title="删除节点"
-                />
-            </div>
-            <div class="node-content">
-                <p v-if="data.category">类型: {{ data.category }}</p>
-                
-                <!-- 事件节点特定内容 -->
-                <template v-if="data.category === 'event' && data.title">
-                    <p>标题: {{ data.title }}</p>
-                    <p v-if="data.content" class="truncate-text">描述: {{ data.content }}</p>
-                </template>
-                
-                <!-- 选择节点特定内容 -->
-                <template v-if="data.category === 'choice' && data.options">
-                    <p>选项数量: {{ data.options.length }}</p>
-                    <p v-if="data.options.length > 0" class="truncate-text">
-                        首选项: {{ data.options[0].text }}
-                    </p>
-                </template>
-                
-                <!-- 奖励节点特定内容 -->
-                <template v-if="data.category === 'reward'">
-                    <p>奖励类型: {{ data.rewardType }}</p>
-                    <p v-if="data.description" class="truncate-text">
-                        描述: {{ data.description }}
-                    </p>
-                </template>
-                
-                <!-- 条件节点特定内容 -->
-                <template v-if="data.category === 'condition'">
-                    <p class="truncate-text">条件: {{ data.condition || '未设置' }}</p>
-                    <p class="truncate-text">描述: {{ data.description }}</p>
-                </template>
-            </div>
-            <div class="node-handles">
-                <div 
-                    class="node-handle source" 
-                    data-handleid="source" 
-                    data-handlepos="right"
-                    :data-nodeid="id"
-                ></div>
-                <div 
-                    class="node-handle target" 
-                    data-handleid="target" 
-                    data-handlepos="left"
-                    :data-nodeid="id"
-                ></div>
-            </div>
-        </div>
-    `,
-});
-
-// 自定义边组件
-const CustomEdge = defineComponent({
-    name: 'CustomEdge',
-    props: [
-        'id',
-        'sourceX',
-        'sourceY',
-        'targetX',
-        'targetY',
-        'source',
-        'target',
-        'label',
-        'markerEnd',
-        'style',
-        'animated',
-        // 添加VueFlow可能传递的其他属性
-        'sourceNode',
-        'targetNode',
-        'type',
-        'updatable',
-        'selected',
-        'labelStyle',
-        'labelShowBg',
-        'labelBgStyle',
-        'labelBgPadding',
-        'labelBgBorderRadius',
-        'data',
-        'events',
-        'markerStart',
-        'sourcePosition',
-        'targetPosition',
-        'sourceHandleId',
-        'targetHandleId',
-        'interactionWidth',
-    ],
-    setup(props) {
-        const path = computed(() => {
-            // 创建一个平滑的曲线路径
-            const centerX = (props.sourceX + props.targetX) / 2;
-            const centerY = (props.sourceY + props.targetY) / 2;
-
-            // 计算控制点，使曲线更自然
-            const dx = Math.abs(props.targetX - props.sourceX);
-            const dy = Math.abs(props.targetY - props.sourceY);
-            const controlPointOffset = Math.min(dx * 0.3, 50); // 控制曲线的弯曲程度
-
-            // 如果是水平连接，则控制点在垂直方向上偏移
-            // 如果是垂直连接，则控制点在水平方向上偏移
-            const isHorizontal = dx > dy;
-
-            let edgePath;
-            if (isHorizontal) {
-                edgePath = `M ${props.sourceX},${props.sourceY} 
-                           C ${props.sourceX + controlPointOffset},${props.sourceY} 
-                             ${props.targetX - controlPointOffset},${props.targetY} 
-                             ${props.targetX},${props.targetY}`;
-            } else {
-                edgePath = `M ${props.sourceX},${props.sourceY} 
-                           C ${props.sourceX},${props.sourceY + controlPointOffset} 
-                             ${props.targetX},${props.targetY - controlPointOffset} 
-                             ${props.targetX},${props.targetY}`;
-            }
-
-            return edgePath;
-        });
-
-        // 计算标签位置
-        const labelPosition = computed(() => {
-            return {
-                x: (props.sourceX + props.targetX) / 2,
-                y: (props.sourceY + props.targetY) / 2 - 10,
-            };
-        });
-
-        // 确定是否应该添加动画类
-        const edgeClasses = computed(() => {
-            return {
-                'vue-flow__edge-path': true,
-                animated: props.animated,
-            };
-        });
-
-        return { path, labelPosition, edgeClasses };
-    },
-    template: `
-        <path 
-            :id="id" 
-            :d="path" 
-            :class="edgeClasses" 
-            :style="style || {}"
-            :marker-end="markerEnd ? 'url(#arrowclosed)' : ''"
-        />
-        <text 
-            v-if="label" 
-            :x="labelPosition.x" 
-            :y="labelPosition.y" 
-            text-anchor="middle" 
-            dominant-baseline="middle"
-            class="vue-flow__edge-text"
-        >
-            {{ label }}
-        </text>
-    `,
-});
-
 // 自定义节点类型
 const nodeTypes = markRaw({
     custom: CustomNode,
@@ -1254,12 +1068,6 @@ const nodeTypes = markRaw({
 const edgeTypes = markRaw({
     default: CustomEdge,
 });
-
-// 注册自定义组件
-const components = {
-    customNode: CustomNode,
-    customEdge: CustomEdge,
-};
 </script>
 
 <template>
@@ -1620,51 +1428,27 @@ const components = {
             </div>
         </div>
     </el-dialog>
-    <!-- 节点右键菜单 -->
+    <!-- 使用导入的组件替换内联组件 -->
     <teleport to="body">
-        <div
-            v-if="contextMenu.visible"
-            class="node-context-menu"
-            :style="{
-                left: `${contextMenu.x}px`,
-                top: `${contextMenu.y}px`,
-            }"
-            @click.stop
-        >
-            <ul>
-                <li @click.stop="handleMenuItemClick('edit', $event)">
-                    <el-icon><Edit /></el-icon> 编辑节点
-                </li>
-                <li @click.stop="handleMenuItemClick('duplicate', $event)">
-                    <el-icon><CopyDocument /></el-icon> 复制节点
-                </li>
-                <li @click.stop="handleMenuItemClick('connect', $event)">
-                    <el-icon><Connection /></el-icon> 连接节点
-                </li>
-                <li @click.stop="handleMenuItemClick('remove', $event)">
-                    <el-icon><Delete /></el-icon> 删除节点
-                </li>
-            </ul>
-        </div>
+        <!-- 节点右键菜单 -->
+        <FlowContextMenu
+            :visible="contextMenu.visible"
+            :x="contextMenu.x"
+            :y="contextMenu.y"
+            :node="contextMenu.node"
+            @edit-node="editNode"
+            @delete-node="removeContextMenuNode"
+            @duplicate-node="duplicateNode"
+            @start-connecting="startConnectingNodes"
+            @close="closeContextMenu"
+        />
 
         <!-- 连接模式提示 -->
-        <div v-if="connectingMode.active" class="connecting-mode-indicator">
-            <el-alert title="连接模式已激活" type="info" :closable="false" show-icon>
-                <template #default>
-                    <div class="connecting-mode-content">
-                        <div class="connecting-source">
-                            从 <strong>{{ connectingMode.sourceNode?.label }}</strong> 连接到...
-                        </div>
-                        <div class="connecting-instructions">
-                            点击目标节点完成连接，或按 <kbd>ESC</kbd> 键取消
-                        </div>
-                        <el-button type="primary" size="small" @click="cancelConnectingMode">
-                            取消连接
-                        </el-button>
-                    </div>
-                </template>
-            </el-alert>
-        </div>
+        <ConnectingModeIndicator
+            :visible="connectingMode.active"
+            :source-node="connectingMode.sourceNode"
+            @cancel-connecting="cancelConnectingMode"
+        />
 
         <!-- 临时连接线 -->
         <svg
@@ -1722,21 +1506,8 @@ const components = {
 </template>
 
 <style>
-/* these are necessary styles for vue flow */
-@import '@vue-flow/core/dist/style.css';
-
-/* this contains the default theme, these are optional styles */
-@import '@vue-flow/core/dist/theme-default.css';
-
-/* 自定义流程图画布样式 */
-:deep(.vue-flow__container) {
-    background-color: #f0f2f5; /* 浅灰色背景 */
-}
-
-:deep(.vue-flow__pane) {
-    background-image: radial-gradient(#e4e7ed 1px, transparent 1px);
-    background-size: 20px 20px; /* 网格大小 */
-}
+/* 导入外部CSS文件 */
+@import '../assets/styles/gameEditor.css';
 </style>
 
 <style lang="less" scoped>

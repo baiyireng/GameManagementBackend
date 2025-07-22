@@ -1,0 +1,272 @@
+/* Vue Flow 必要样式 */
+@import '@vue-flow/core/dist/style.css';
+
+/* Vue Flow 默认主题样式 */
+@import '@vue-flow/core/dist/theme-default.css';
+
+/* 自定义流程图画布样式 */
+.vue-flow__container {
+    background-color: #f0f2f5;
+    /* 浅灰色背景 */
+}
+
+.vue-flow__pane {
+    background-image: radial-gradient(#e4e7ed 1px, transparent 1px);
+    background-size: 20px 20px;
+    /* 网格大小 */
+}
+
+/* 自定义节点样式 */
+.custom-node {
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: #333;
+    text-align: left;
+    width: 180px;
+    background-color: white;
+    border: 1px solid #dcdfe6;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.custom-node.selected {
+    border: 2px solid #409EFF;
+    box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.2);
+}
+
+.node-header {
+    font-weight: bold;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ebeef5;
+    margin-bottom: 8px;
+}
+
+.node-content {
+    min-height: 40px;
+}
+
+.node-content p {
+    margin: 5px 0;
+}
+
+/* 节点类型特定样式 */
+.node-event {
+    background-color: #ecf5ff;
+    border-color: #d9ecff;
+}
+
+.node-choice {
+    background-color: #f0f9eb;
+    border-color: #e1f3d8;
+}
+
+.node-condition {
+    background-color: #fdf6ec;
+    border-color: #faecd8;
+}
+
+.node-reward {
+    background-color: #f5f7fa;
+    border-color: #e4e7ed;
+}
+
+/* 节点连接点样式 */
+.node-handles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.node-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #fff;
+    border: 2px solid #409EFF;
+    border-radius: 50%;
+    pointer-events: all;
+}
+
+.node-handle.source {
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: crosshair;
+}
+
+.node-handle.target {
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: crosshair;
+}
+
+/* 自定义边样式 */
+.vue-flow__edge {
+    stroke: #b4bccc;
+    stroke-width: 2;
+}
+
+.vue-flow__edge.selected {
+    stroke: #409EFF;
+    stroke-width: 3;
+}
+
+.vue-flow__edge.animated .vue-flow__edge-path {
+    stroke-dasharray: 5;
+    animation: dashdraw 0.5s linear infinite;
+}
+
+@keyframes dashdraw {
+    from {
+        stroke-dashoffset: 10;
+    }
+}
+
+.vue-flow__edge-text {
+    font-size: 12px;
+    fill: #606266;
+    pointer-events: none;
+}
+
+/* 右键菜单样式 */
+.node-context-menu {
+    position: fixed;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.node-context-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.node-context-menu li {
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.node-context-menu li:hover {
+    background-color: #f5f7fa;
+}
+
+/* 连接模式指示器样式 */
+.connecting-mode-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: 400px;
+}
+
+.connecting-mode-content {
+    margin-top: 8px;
+}
+
+.connecting-source {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.connecting-instructions {
+    font-size: 12px;
+    color: #606266;
+}
+
+/* 工具栏样式 */
+.flow-toolbar {
+    padding: 10px;
+    background-color: white;
+    border-bottom: 1px solid #dcdfe6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flow-toolbar-left,
+.flow-toolbar-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* 节点面板样式 */
+.node-panel {
+    padding: 10px;
+    background-color: white;
+    border-right: 1px solid #dcdfe6;
+    width: 200px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.node-panel-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ebeef5;
+}
+
+.node-item {
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.node-item:hover {
+    background-color: #f5f7fa;
+}
+
+/* 文本截断样式 */
+.truncate-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+/* 编辑器布局样式 */
+.game-editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.editor-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.flow-container {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+/* 节点编辑表单样式 */
+.node-edit-form .el-form-item {
+    margin-bottom: 18px;
+}
+
+.node-edit-form .form-actions {
+    margin-top: 20px;
+    text-align: right;
+}

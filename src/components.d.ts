@@ -8,6 +8,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ConnectingModeIndicator: typeof import('./components/flow/ConnectingModeIndicator.vue')['default']
+    CustomEdge: typeof import('./components/flow/CustomEdge.vue')['default']
+    CustomNode: typeof import('./components/flow/CustomNode.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElButton: typeof import('element-plus/es')['ElButton']
@@ -39,6 +42,7 @@ declare module 'vue' {
     ElTag: typeof import('element-plus/es')['ElTag']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    FlowContextMenu: typeof import('./components/flow/FlowContextMenu.vue')['default']
     FormulaEditor: typeof import('./components/FormulaEditor.vue')['default']
     IEpCreditCard: typeof import('~icons/ep/credit-card')['default']
     ImageUploader: typeof import('./components/ImageUploader.vue')['default']

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, markRaw, computed, reactive, onMounted, onUnmounted } from 'vue';
-import { VueFlow, useNodes, useEdges } from '@vue-flow/core';
+import { VueFlow, useVueFlow, useNodes, useEdges } from '@vue-flow/core';
 import { ElMessage, ElMessageBox, ElTooltip } from 'element-plus';
 import NodePropertyModal from '@/components/NodePropertyModal.vue';
 import { Edit, Delete, CopyDocument, Connection } from '@element-plus/icons-vue';
@@ -25,6 +25,8 @@ import {
     getDefaultNodeData,
     getNodeTypeName,
     getNodeTypeIcon,
+    getTempConnectionPath,  // 更新临时连接线路径
+    getSourceNodeHandlePosition
 } from '@/utils/flowUtils';
 
 // 定义游戏编辑入口数据结构
@@ -87,12 +89,7 @@ const edges = ref([
         type: 'default',
         animated: false,
         style: { stroke: '#409EFF' },
-        markerEnd: {
-            type: 'arrowclosed',
-            width: 20,
-            height: 20,
-            color: '#409EFF',
-        },
+        markerEnd: 'url(#arrowclosed)',
     },
     {
         id: 'e1-3',
@@ -101,12 +98,7 @@ const edges = ref([
         type: 'default',
         animated: false,
         style: { stroke: '#409EFF' },
-        markerEnd: {
-            type: 'arrowclosed',
-            width: 20,
-            height: 20,
-            color: '#409EFF',
-        },
+        markerEnd: 'url(#arrowclosed)',
     },
     {
         id: 'e2-4',
@@ -115,12 +107,7 @@ const edges = ref([
         type: 'default',
         animated: false,
         style: { stroke: '#409EFF' },
-        markerEnd: {
-            type: 'arrowclosed',
-            width: 20,
-            height: 20,
-            color: '#409EFF',
-        },
+        markerEnd: 'url(#arrowclosed)',
     },
     {
         id: 'e3-4',
@@ -129,12 +116,7 @@ const edges = ref([
         type: 'default',
         animated: false,
         style: { stroke: '#409EFF' },
-        markerEnd: {
-            type: 'arrowclosed',
-            width: 20,
-            height: 20,
-            color: '#409EFF',
-        },
+        markerEnd: 'url(#arrowclosed)',
     },
 ]);
 
@@ -238,6 +220,12 @@ const connectingMode = reactive({
     mouseY: 0,
     showConnectionLine: false,
 });
+
+// 获取VueFlow实例
+const { findNode } = useVueFlow();
+
+// 添加响应式引用以在模板中访问
+const vueFlowRef = ref(null);
 
 // 节点点击事件
 const onNodeClick = (...args) => {
@@ -579,8 +567,21 @@ const handleMouseMove = (event) => {
         return; // 如果连接模式未激活或源节点未设置，则不处理
     }
 
-    // 获取鼠标相对于流程图容器的位置
-    const flowContainer = document.querySelector('.vue-flow__container');
+    // 获取正确的容器元素（全屏和非全屏模式下不同）
+    let flowContainer = null;
+    if (flowEditorVisible.value) {
+        // 全屏模式
+        flowContainer = document.querySelector('.flow-editor-main .vue-flow__container');
+    } else {
+        // 非全屏模式
+        flowContainer = document.querySelector('.visual-flow-editor .vue-flow__container');
+    }
+    
+    if (!flowContainer) {
+        // fallback到原来的查询方式
+        flowContainer = document.querySelector('.vue-flow__container');
+    }
+    
     if (!flowContainer) {
         return; // 如果找不到流程图容器，则不处理
     }
@@ -599,36 +600,11 @@ const handleMouseMove = (event) => {
     // 确保显示连接线
     connectingMode.showConnectionLine = true;
 
-    // 更新临时连接线
-    const tempLine = document.querySelector('.temp-connection-line path');
-    if (tempLine) {
-        // 获取源节点的位置
-        const sourceNode = document.querySelector(`[data-id="${connectingMode.sourceNode.id}"]`);
-        if (sourceNode) {
-            const sourceRect = sourceNode.getBoundingClientRect();
-            // 计算源节点中心点相对于流程图容器的位置
-            const sourceX = sourceRect.left + sourceRect.width / 2 - rect.left;
-            const sourceY = sourceRect.top + sourceRect.height / 2 - rect.top;
-
-            // 更新连接线路径
-            tempLine.setAttribute('d', `M ${sourceX},${sourceY} L ${mouseX},${mouseY}`);
-        }
-    }
-
     // 高亮可能的目标节点
     const sourceNode = nodes.value.find((n) => n.id === connectingMode.sourceNode.id);
     if (sourceNode) {
         highlightPossibleTargets(sourceNode);
     }
-
-    // 防止过多的日志输出，只在调试时使用
-    // console.log('鼠标移动:', {
-    //     mousePos: { x: connectingMode.mouseX, y: connectingMode.mouseY },
-    //     sourcePos: {
-    //         x: connectingMode.sourceNode.position.x,
-    //         y: connectingMode.sourceNode.position.y,
-    //     },
-    // });
 };
 
 // 启动连接模式
@@ -843,12 +819,7 @@ const createConnection = (targetNode) => {
             animated: false,
             label: '',
             style: { stroke: '#409EFF' }, // 使用主题蓝色
-            markerEnd: {
-                type: 'arrowclosed',
-                width: 20,
-                height: 20,
-                color: '#409EFF',
-            },
+            markerEnd: 'url(#arrowclosed)', // 修复markerEnd格式
             data: {
                 sourceCategory: sourceCategory,
                 targetCategory: targetCategory,
@@ -884,6 +855,24 @@ const autoConnectRules = {
     condition: ['event', 'choice', 'reward'],
 };
 
+// 添加防抖函数
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+};
+
+// 节点拖拽过程事件 - 添加防抖机制提高性能
+const onNodeDrag = debounce((event, node) => {
+    // 在拖拽过程中不执行任何昂贵的操作以提高性能
+}, 16); // 约60FPS
+
 // 节点拖拽结束事件
 const onNodeDragStop = (event, node) => {
     // 检查是否需要自动创建连接线
@@ -897,24 +886,28 @@ const onNodeDragStop = (event, node) => {
 
     // 如果有可连接的节点，则创建连接线
     if (targetNodes.length > 0) {
-        const newEdge = {
-            id: `e${node.id}-${targetNodes[0].id}`,
-            source: node.id,
-            target: targetNodes[0].id,
-            type: 'default',
-            animated: false,
-            style: { stroke: '#409EFF' }, // 使用主题蓝色
-            markerEnd: {
-                type: 'arrowclosed',
-                width: 20,
+        // 检查是否已存在连接
+        const connectionExists = edges.value.some(
+            (edge) => edge.source === node.id && edge.target === targetNodes[0].id,
+        );
+        
+        if (!connectionExists) {
+            const newEdge = {
+                id: `e${node.id}-${targetNodes[0].id}`,
+                source: node.id,
+                target: targetNodes[0].id,
+                type: 'default',
+                animated: false,
+                style: { stroke: '#409EFF' }, // 使用主题蓝色
+                markerEnd: 'url(#arrowclosed)', // 修复markerEnd格式
+            };
 
-                color: '#409EFF',
-            },
-        };
-
-        edges.value.push(newEdge);
-        refreshFlowChart();
+            edges.value.push(newEdge);
+        }
     }
+    
+    // 拖拽结束后刷新以确保正确渲染
+    refreshFlowChart();
 };
 
 // 手动连接节点时的事件处理
@@ -947,12 +940,7 @@ const onConnect = (params) => {
         animated: false,
         label: '',
         style: { stroke: '#409EFF' }, // 使用主题蓝色
-        markerEnd: {
-            type: 'arrowclosed',
-            width: 20,
-            height: 20,
-            color: '#409EFF',
-        },
+        markerEnd: 'url(#arrowclosed)', // 修复markerEnd格式
     };
 
     console.log('创建新连接:', newEdge);
@@ -979,8 +967,14 @@ const propertyModalVisible = ref(false);
 
 // 手动触发流程图重新渲染
 const refreshFlowChart = () => {
-    // 创建新的节点数组引用，避免响应式数据未更新
+    // 创建新的节点和边数组引用，确保Vue Flow能正确检测到变化
     nodes.value = [...nodes.value];
+    edges.value = [...edges.value];
+};
+
+// 修复连接线显示问题的函数
+const updateEdgePositions = () => {
+    // 强制更新所有边的位置信息
     edges.value = [...edges.value];
 };
 
@@ -997,6 +991,11 @@ const openFlowEditor = () => {
                 selectedNode.value = node;
             }
         }
+        // 如果在连接模式下打开全屏，需要重新绑定事件监听器
+        if (connectingMode.active) {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mousemove', handleMouseMove);
+        }
     }, 100);
 };
 
@@ -1004,7 +1003,14 @@ const openFlowEditor = () => {
 const closeFlowEditor = () => {
     flowEditorVisible.value = false;
     // 延迟执行以确保 DOM 更新完成
-    setTimeout(refreshFlowChart, 300);
+    setTimeout(() => {
+        refreshFlowChart();
+        // 如果在连接模式下关闭全屏，需要重新绑定事件监听器
+        if (connectingMode.active) {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mousemove', handleMouseMove);
+        }
+    }, 300);
 };
 
 // 标记流程图为已修改状态
@@ -1192,7 +1198,7 @@ const updateNodeFun = (updatedNode) => {
                 </div>
             </template>
 
-            <div class="flow-container">
+            <div class="flow-container" style="width: 100%; height: 450px;">
                 <VueFlow
                     class="floow_card_body"
                     :nodes="nodes"
@@ -1203,6 +1209,7 @@ const updateNodeFun = (updatedNode) => {
                     style="width: 100%; height: 100%"
                     @node-click="onNodeClick"
                     @node-context-menu="onNodeContextMenu"
+                    @node-drag="onNodeDrag"
                     @node-drag-stop="onNodeDragStop"
                     @connect="onConnect"
                     @pane-click="closeContextMenu"
@@ -1225,19 +1232,6 @@ const updateNodeFun = (updatedNode) => {
                         />
                     </template>
 
-                    <template #edge-marker>
-                        <marker
-                            id="arrowclosed"
-                            viewBox="0 0 10 10"
-                            refX="5"
-                            refY="5"
-                            markerWidth="8"
-                            markerHeight="8"
-                            orient="auto-start-reverse"
-                        >
-                            <path d="M 0 0 L 10 5 L 0 10 z" fill="#409EFF" />
-                        </marker>
-                    </template>
                 </VueFlow>
             </div>
 
@@ -1376,7 +1370,7 @@ const updateNodeFun = (updatedNode) => {
                     :node-types="nodeTypes"
                     :edge-types="edgeTypes"
                     :connect-on-click="true"
-                    style="width: 100%; height: 100vh; overflow: auto"
+                    style="width: 100%; height: 100%; min-height: 500px;"
                     @node-click="onNodeClick"
                     @node-context-menu="onNodeContextMenu"
                     @node-drag-stop="onNodeDragStop"
@@ -1405,7 +1399,7 @@ const updateNodeFun = (updatedNode) => {
                         <marker
                             id="arrowclosed"
                             viewBox="0 0 10 10"
-                            refX="5"
+                            refX="8"
                             refY="5"
                             markerWidth="8"
                             markerHeight="8"
@@ -1450,21 +1444,20 @@ const updateNodeFun = (updatedNode) => {
         <svg
             v-if="connectingMode.active && connectingMode.showConnectionLine"
             class="temp-connection-line"
-            style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                pointer-events: none;
-                z-index: 9999;
-            "
+            :style="{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                'pointer-events': 'none',
+                'z-index': 9999
+            }"
         >
-            <g>
+            <g v-if="connectingMode.sourceNode">
                 <path
-                    :d="`M ${connectingMode.sourceNode?.position.x + 180},${
-                        connectingMode.sourceNode?.position.y + 50
-                    } L ${connectingMode.mouseX},${connectingMode.mouseY}`"
+                    v-if="findNode"
+                    :d="getTempConnectionPath(findNode(connectingMode.sourceNode.id), connectingMode.mouseX, connectingMode.mouseY)"
                     stroke="#409EFF"
                     stroke-width="2"
                     fill="none"
@@ -1474,7 +1467,7 @@ const updateNodeFun = (updatedNode) => {
                 <marker
                     id="temp-arrow"
                     viewBox="0 0 10 10"
-                    refX="5"
+                    refX="8"
                     refY="5"
                     markerWidth="6"
                     markerHeight="6"
@@ -1484,8 +1477,9 @@ const updateNodeFun = (updatedNode) => {
                 </marker>
                 <!-- 添加起点和终点指示器 -->
                 <circle
-                    :cx="connectingMode.sourceNode?.position.x + 180"
-                    :cy="connectingMode.sourceNode?.position.y + 50"
+                    v-if="findNode && findNode(connectingMode.sourceNode.id)"
+                    :cx="getSourceNodeHandlePosition(findNode(connectingMode.sourceNode.id)).x"
+                    :cy="getSourceNodeHandlePosition(findNode(connectingMode.sourceNode.id)).y"
                     r="4"
                     fill="#409EFF"
                 />
@@ -1722,7 +1716,7 @@ const updateNodeFun = (updatedNode) => {
     width: 100% !important;
 }
 
-// /* 确保非全屏时 vue-flow 容器仍能正确渲染 */
+/* 确保非全屏时 vue-flow 容器仍能正确渲染 */
 :deep(.floow_card_body .vue-flow__container) {
     height: 100% !important;
 }

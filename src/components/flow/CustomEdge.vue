@@ -50,6 +50,7 @@ const props = defineProps({
     markerEnd: {
         type: String,
         required: false,
+        default: 'url(#arrowclosed)',
     },
     style: {
         type: Object,
@@ -90,13 +91,19 @@ const updatePath = () => {
 
     if (!sourceNode || !targetNode) return;
 
+    // 优先使用边数据中存储的连接点坐标
+    const sourceX = props.data?.sourceX !== undefined ? props.data.sourceX : props.sourceX;
+    const sourceY = props.data?.sourceY !== undefined ? props.data.sourceY : props.sourceY;
+    const targetX = props.data?.targetX !== undefined ? props.data.targetX : props.targetX;
+    const targetY = props.data?.targetY !== undefined ? props.data.targetY : props.targetY;
+
     // 使用 getBezierPath 计算贝塞尔曲线路径
     const [path, labelCoords] = getBezierPath({
-        sourceX: props.sourceX,
-        sourceY: props.sourceY,
+        sourceX: sourceX,
+        sourceY: sourceY,
         sourcePosition: props.sourcePosition,
-        targetX: props.targetX,
-        targetY: props.targetY,
+        targetX: targetX,
+        targetY: targetY,
         targetPosition: props.targetPosition,
     });
 
@@ -117,7 +124,12 @@ onMounted(() => {
 
 <template>
     <g :class="['vue-flow__edge', { selected: isSelected, animated: data?.animated }]" @click.stop>
-        <path :d="edgePath" class="vue-flow__edge-path" :style="style" :marker-end="markerEnd" />
+        <path
+            :d="edgePath"
+            class="vue-flow__edge-path"
+            :style="style"
+            :marker-end="markerEnd || 'url(#arrowclosed)'"
+        />
         <text
             v-if="data?.label"
             :x="labelX"

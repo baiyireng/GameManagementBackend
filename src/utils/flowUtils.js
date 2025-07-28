@@ -196,6 +196,66 @@ export function getNodeTypeIcon(type) {
 }
 
 /**
+ * 获取临时连接线路径
+ * @param {Object} sourceNode - 源节点
+ * @param {number} mouseX - 鼠标X坐标
+ * @param {number} mouseY - 鼠标Y坐标
+ * @returns {string} 连接线路径
+ */
+export function getTempConnectionPath(sourceNode, mouseX, mouseY) {
+    // 添加更安全的检查
+    if (!sourceNode || !sourceNode.position) {
+        return `M 0,0 L 0,0`;
+    }
+
+    // 计算源节点右侧中心点，提供默认值
+    const sourceX = sourceNode.position.x + (sourceNode.dimensions?.width || 180);
+    const sourceY = sourceNode.position.y + (sourceNode.dimensions?.height || 50) / 2;
+
+    // 简单直线路径
+    return `M ${sourceX},${sourceY} L ${mouseX || 0},${mouseY || 0}`;
+}
+
+/**
+ * 使用贝塞尔曲线计算临时连接线路径
+ * @param {Object} sourceNode - 源节点
+ * @param {number} mouseX - 鼠标X坐标
+ * @param {number} mouseY - 鼠标Y坐标
+ * @returns {string} 连接线路径
+ */
+export function getBezierTempConnectionPath(sourceNode, mouseX, mouseY) {
+    // 添加更安全的检查
+    if (!sourceNode || !sourceNode.position) {
+        return `M 0,0 L 0,0`;
+    }
+
+    // 计算源节点右侧中心点，提供默认值
+    const sourceX = sourceNode.position.x + (sourceNode.dimensions?.width || 180);
+    const sourceY = sourceNode.position.y + (sourceNode.dimensions?.height || 50) / 2;
+
+    // 简单直线路径作为备选方案
+    return `M ${sourceX},${sourceY} L ${mouseX || 0},${mouseY || 0}`;
+}
+
+/**
+ * 获取源节点连接点位置
+ * @param {Object} sourceNode - 源节点
+ * @returns {Object} 连接点坐标
+ */
+export function getSourceNodeHandlePosition(sourceNode) {
+    // 添加更安全的检查
+    if (!sourceNode || !sourceNode.position) {
+        return { x: 0, y: 0 };
+    }
+
+    // 计算右侧连接点位置（源节点），提供默认值
+    return {
+        x: sourceNode.position.x + (sourceNode.dimensions?.width || 180),
+        y: sourceNode.position.y + (sourceNode.dimensions?.height || 50) / 2
+    };
+}
+
+/**
  * 导出流程图为JSON
  * @param {Array} nodes 节点数组
  * @param {Array} edges 边数组
